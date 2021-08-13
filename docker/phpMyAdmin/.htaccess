@@ -1,0 +1,5 @@
+# phpMyAdmin Basic認証
+AuthType Basic
+AuthName "Please Enter Your Password"
+AuthUserFile /var/www/html/.htpasswd
+Require valid-user

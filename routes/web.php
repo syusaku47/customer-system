@@ -23,8 +23,8 @@ use App\Http\Controllers\CookieAuthenticationController;
 
 Route::post('/login', [CookieAuthenticationController::class, 'login']);
 Route::post('/logout', [CookieAuthenticationController::class, 'logout']);
-//
-//Route::get('{path?}', 'Controller@action')->where('path', '.*');
+
+Route::get('{path?}', 'Controller@action')->where('path', '.*');
 
 
 

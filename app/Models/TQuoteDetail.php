@@ -6,7 +6,6 @@ use App\Libraries\CommonUtility;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 
 /**
  * Class TQuoteDetail<br>
@@ -113,21 +112,14 @@ class TQuoteDetail extends ModelBase
             'tqd.koji_component_name as tqd_koji_component_name',
             'tqd.print_name as tqd_print_name',
             'tqd.standard as tqd_standard',
-            DB::raw('sum(tqd.quantity) as tqd_quantity'),
-            DB::raw('sum(tqd.quote_unit_price) as tqd_quote_unit_price'),
-            DB::raw('sum(tqd.price) as price'),
-            DB::raw('sum(tqd.prime_cost) as tqd_prime_cost'),
-            DB::raw('sum(tqd.cost_amount) as tqd_cost_amount'),
-            DB::raw('sum(tqd.gross_profit_amount) as tqd_gross_profit_amount'),
+            'tqd.quantity as tqd_quantity',
+            'tqd.quote_unit_price as tqd_quote_unit_price',
+            'tqd.price as tqd_price',
+            'tqd.prime_cost as tqd_prime_cost',
+            'tqd.cost_amount as tqd_cost_amount',
+            'tqd.gross_profit_amount as tqd_gross_profit_amount',
             'tqd.gross_profit_rate as tqd_gross_profit_rate',
             'tqd.remarks as tqd_remarks',
-            'tqd.category_index as tqd_category_index',
-            'tqd.sub_category_index as tqd_sub_category_index',
-            // 見積データ
-            'tq.field_cooperating_cost_estimate as tq_field_cooperating_cost_estimate',
-            'tq.field_cooperating_cost as tq_field_cooperating_cost',
-            'tq.call_cost_estimate as tq_call_cost_estimate',
-            'tq.call_cost as tq_call_cost',
             // 大分類マスタ
             'mc.id as mc_id',
             'mc.name as mc_name',
@@ -138,12 +130,9 @@ class TQuoteDetail extends ModelBase
             'mcr.id as mcr_id',
             'mcr.name as mcr_name',
         )->distinct()->from('t_quote_details as tqd')
-            ->leftjoin('t_quotes as tq', 'tqd.quote_id', '=', 'tq.id') // 見積データ
             ->leftjoin('m_categories as mc', 'tqd.category_id', '=', 'mc.id') // 大分類マスタ
             ->leftjoin('m_sub_categories as msc', 'tqd.sub_category_id', '=', 'msc.id') // 中分類マスタ
-            ->leftjoin('m_credits as mcr', 'tqd.unit', '=', 'mcr.id') // 単位マスタ
-            ->where('tq.is_editing', 0)
-            ->groupby('mc.id', 'msc.id', 'tqd.id', 'tqd.quote_id');
+            ->leftjoin('m_credits as mcr', 'tqd.unit', '=', 'mcr.id'); // 単位マスタ
 
         // 検索条件（where）
         self::set_where($query, $param);
@@ -264,7 +253,7 @@ class TQuoteDetail extends ModelBase
         if ($result->count() == 0) {
             return $result;
         }
-//dd($query->toSql(), $query->getBindings());
+
         // 取得結果整形
         if ($id == 0) {
             return self::get_format_column_tree_all($result);
@@ -498,41 +487,6 @@ class TQuoteDetail extends ModelBase
 
             $arr = $item->toArray();
 
-            // 大分類・中分類データ重複判定
-            $same_flg = false;
-            foreach ($results as $result) {
-                if ((array_key_exists('category', $result)
-                    && $arr['mc_id'] == $result['category'])
-                    && (array_key_exists('sub_category', $result)
-                    && $arr['msc_id'] == $result['sub_category'])) {
-                    // 設定済みの分類のデータと同じ場合
-                    $same_flg = true;
-                }
-            }
-            if ($same_flg) {
-                // 同じ分類のデータの場合、次の取得データへ飛ばす
-                continue;
-            }
-            // 計算処理
-            // 金額
-            // （見積明細データ．数量） × （見積明細データ．見積単価）
-            $price = floatval($arr['tqd_quantity']) * floatval($arr['tqd_quote_unit_price']);
-            // 原価金額
-            // （見積明細データ．数量） × （見積明細データ．原価）
-            $cost_amount = floatval($arr['tqd_quantity']) * floatval($arr['tqd_prime_cost']);
-            // 見積合計金額
-            // （見積明細データ．見積金額 ）+ （見積明細データ．現場協力費（見積）） + （見積明細データ．予備原価（見積））
-            $quote_total_amount = floatval($price) + floatval($arr['tq_field_cooperating_cost_estimate']) + floatval($arr['tq_call_cost_estimate']);
-            // 原価合計金額
-            // （見積明細データ．原価金額） + （見積明細データ．現場協力費（原価）） + （見積明細データ．予備原価（原価））
-            $cost_total_amount = floatval($cost_amount) + floatval($arr['tq_field_cooperating_cost']) + floatval($arr['tq_call_cost']);
-            // 粗利金額
-            // 見積合計金額 - 原価合計金額
-            $gross_profit_amount = $quote_total_amount - $cost_total_amount;
-            // 粗利率
-            // （(見積金額 - 原価金額) / 見積金額) × 100 ※四捨五入
-            $gross_profit_rate = (floatval($price) - floatval($cost_amount)) == 0 ? 0 : round((floatval($price) - floatval($cost_amount)) / floatval($price) * 100);
-
             $data = [
                 'quote_id' => $arr['tqd_quote_id'], // 見積ID
                 'id' => $arr['tqd_id'], // 見積明細ID
@@ -547,14 +501,12 @@ class TQuoteDetail extends ModelBase
                 'unit' => $arr['mcr_id'], // 単位
                 'unit_name' => $arr['mcr_name'], // 単位名称
                 'quote_unit_price' => floatval($arr['tqd_quote_unit_price']), // 見積単価
-                'price' => $price, // 金額
+                'price' => floatval($arr['tqd_price']), // 金額
                 'prime_cost' => floatval($arr['tqd_prime_cost']), // 原価
-                'cost_amount' => $cost_amount, // 原価金額
-                'gross_profit_amount' => $gross_profit_amount, // 粗利金額
-                'gross_profit_rate' => $gross_profit_rate, // 粗利率
+                'cost_amount' => floatval($arr['tqd_cost_amount']), // 原価金額
+                'gross_profit_amount' => floatval($arr['tqd_gross_profit_amount']), // 粗利金額
+                'gross_profit_rate' => floatval($arr['tqd_gross_profit_rate']), // 粗利率
                 'remarks' => $arr['tqd_remarks'], // 備考
-                'index' => $arr['tqd_category_index'], // 大分類表示順
-                'sub_index' => $arr['tqd_sub_category_index'], // 中分類表示順
             ];
             $results->push($data);
         }
@@ -637,26 +589,16 @@ class TQuoteDetail extends ModelBase
             foreach ($collection as $item2) {
 
                 $arr2 = $item2->toArray();
-                if ($data['parent_id'] == $arr2['tqd_category_id']) {
-                    // 同じ大分類の場合
-                    $same_sub_flag = false;
-                    foreach ($data['sub'] as $sub) {
-                        // 設定済みの中分類と比較
-                        if ($sub['id'] == $arr2['tqd_sub_category_id']) {
-                            // 同じ中分類の場合
-                            $same_sub_flag = true;
-                        }
-                    }
-                    if (!$same_sub_flag) {
-                        // 同じ大分類に属する別の中分類の場合
-                        // 大分類配列の中に中分類配列を追加
-                        $data['sub'][] = [
-                            'id' => $arr2['tqd_sub_category_id'], // 中分類ID
-                            'index' => $arr2['tqd_sub_category_index'], // 中分類表示順
-                            'title' => $arr2['msc_name'], // 中分類名
-                            'percent' => floatval($arr2['tqd_sub_category_percent']), // 中分類パーセント
-                        ];
-                    }
+                if (($data['parent_id'] == $arr2['tqd_category_id'])
+                    && ($arr2['tqd_sub_category_id'] != $arr['tqd_sub_category_id'])) {
+                    // 同じ大分類に属する別の中分類の場合
+                    // 大分類配列の中に中分類配列を追加
+                    $data['sub'][] = [
+                        'id' => $arr2['tqd_sub_category_id'], // 中分類ID
+                        'index' => $arr2['tqd_sub_category_index'], // 中分類表示順
+                        'title' => $arr2['msc_name'], // 中分類名
+                        'percent' => floatval($arr2['tqd_sub_category_percent']), // 中分類パーセント
+                    ];
                 }
             }
             $results->push($data);
@@ -708,25 +650,15 @@ class TQuoteDetail extends ModelBase
             foreach ($collection as $item2) {
 
                 $arr2 = $item2->toArray();
-                if ($data['parent_id'] == $arr2['tqd_category_id']) {
-                    // 同じ大分類の場合
-                    $same_sub_flag = false;
-                    foreach ($data['sub'] as $sub) {
-                        // 設定済みの中分類と比較
-                        if ($sub['id'] == $arr2['tqd_sub_category_id']) {
-                            // 同じ中分類の場合
-                            $same_sub_flag = true;
-                        }
-                    }
-                    if (!$same_sub_flag) {
-                        // 同じ大分類に属する別の中分類の場合
-                        // 大分類配列の中に中分類配列を追加
-                        $data['sub'][] = [
-                            'id' => $arr2['tqd_sub_category_id'], // 中分類ID
-                            'index' => $arr2['tqd_sub_category_index'], // 中分類表示順
-                            'title' => $arr2['msc_name'], // 中分類名
-                        ];
-                    }
+                if (($data['parent_id'] == $arr2['tqd_category_id'])
+                    && ($arr2['tqd_sub_category_id'] != $arr['tqd_sub_category_id'])) {
+                    // 同じ大分類に属する別の中分類の場合
+                    // 大分類配列の中に中分類配列を追加
+                    $data['sub'][] = [
+                        'id' => $arr2['tqd_sub_category_id'], // 中分類ID
+                        'index' => $arr2['tqd_sub_category_index'], // 中分類表示順
+                        'title' => $arr2['msc_name'], // 中分類名
+                    ];
                 }
             }
             $results->push($data);

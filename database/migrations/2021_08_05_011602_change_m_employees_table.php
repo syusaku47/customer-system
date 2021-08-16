@@ -18,7 +18,7 @@ class ChangeMEmployeesTable extends Migration
         });
 
         Schema::table('m_employees', function (Blueprint $table) {
-            $table->integer('store_id')->nullable(false)->comment('店舗ID')->unsigned()->change();
+            $table->integer('store_id')->nullable()->comment('店舗ID')->unsigned()->change();
         });
     }
 

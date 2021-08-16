@@ -15,7 +15,7 @@ final class CookieAuthenticationController extends Controller
      * @param Auth $auth
      */
     public function __construct(
-        private Auth $auth,
+         Auth $auth
     ) {
     }
 

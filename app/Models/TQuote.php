@@ -144,8 +144,6 @@ class TQuote extends ModelBase
             DB::raw('sum(tq.tax_amount_cost) as tq_tax_amount_cost'),
             DB::raw('sum(tq.including_tax_total_cost) as tq_including_tax_total_cost'),
             DB::raw('sum(tq.adjustment_amount) as tq_adjustment_amount'),
-            'tq.field_cooperating_cost as tq_field_cooperating_cost',
-            'tq.call_cost as tq_call_cost',
             // 案件データ
             'tp.field_name as tp_field_name',
             'tp.name as tp_name as tp_name',
@@ -167,8 +165,6 @@ class TQuote extends ModelBase
             DB::raw('sum(to.completion_money) as to_completion_money'),
             // 見積明細データ
             DB::raw('sum(tqd.prime_cost) as tqd_prime_cost'),
-            DB::raw('sum(tqd.quantity) as tqd_quantity'),
-            DB::raw('sum(tqd.quote_unit_price) as tqd_quote_unit_price'),
             // 社員マスタ（案件担当者取得用）
             'me1.name as me1_name',
             // 社員マスタ（見積作成者取得用）
@@ -629,21 +625,10 @@ class TQuote extends ModelBase
 
             $arr = $item->toArray();
 
-            // 計算処理
-            // 見積金額
-            // （見積明細データ．数量） × （見積明細データ．見積単価）
-            $price = floatval($arr['tqd_quantity']) * floatval($arr['tqd_quote_unit_price']);
-            // 原価金額
-            // （見積明細データ．数量） × （見積明細データ．原価）
-            $cost_amount = floatval($arr['tqd_quantity']) * floatval($arr['tqd_prime_cost']);
-            // 原価合計
-            // （見積明細データ．原価金額） + （見積明細データ．現場協力費（原価）） + （見積明細データ．予備原価（原価））
-            $cost_total_amount = floatval($cost_amount) + floatval($arr['tq_field_cooperating_cost']) + floatval($arr['tq_call_cost']);
-            // 未割当金
+            // 未割当金計算
             // （案件データ．受注金額）－（受注データ．契約金）－（受注データ．着工金）－（受注データ．中間金1）－（受注データ．中間金2）－（受注データ．完工金）
             $unallocated_money =
                 floatval($arr['tp_order_price'] - $arr['to_contract_money'] - $arr['to_start_construction_money'] - $arr['to_intermediate_gold1'] - $arr['to_intermediate_gold2'] - $arr['to_completion_money']);
-
             $data = [
                 'project_id' => $arr['tq_project_id'], // 案件ID
                 'id' => $arr['tq_id'], // 見積ID
@@ -654,10 +639,10 @@ class TQuote extends ModelBase
                 'project_name' => $arr['tp_name'], // 案件名
                 'project_representative_name' => $arr['me1_name'], // 案件担当者
                 'quote_creator' => $arr['me2_name'], // 見積作成者
-                'quote_price' => $price, // 見積金額
+                'quote_price' => floatval($arr['tq_quote_price']), // 見積金額
                 'tax_amount_quote' => floatval($arr['tq_tax_amount_quote']), // 消費税額（見積）
                 'including_tax_total_quote' => floatval($arr['tq_including_tax_total_quote']), // 税込合計見積
-                'cost_sum' => $cost_total_amount, // 原価合計
+                'cost_sum' => floatval($arr['tq_cost_sum']), // 原価合計
                 'tax_amount_cost' => floatval($arr['tq_tax_amount_cost']), // 消費税額（原価）
                 'including_tax_total_cost' => floatval($arr['tq_including_tax_total_cost']), // 税込合計原価
                 'adjustment_amount' => floatval($arr['tq_adjustment_amount']), // 調整額

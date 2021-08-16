@@ -17,31 +17,31 @@ class MSubCategoriesController extends Controller
      */
     public function index(Request $request)
     {
-//        try {
-//            // パラメータから検索
-//            $results = MSubCategory::search_list($request);
-//
-//            $count = $results->count();
-//            if ($count == 0) {
-//                // 総件数
-//                $this->_body['hit_count'] = 0;
-//                // 取得データ
-//                $this->_body['data'] = [];
-//                return $this->jsonResponse($request->path());
-//            }
-//            // 総件数
-//            $this->_body['hit_count'] = $count;
-//            // 取得データ
-//            $this->_body['data'] = $results;
-//
-//        } catch (\Exception $e) {
-//            $this->_status = 0;
-//            $this->_status_code = 500;
-//            $this->_messages[] = $e->getMessage();
-//            $this->error($e);
-//        }
-//
-//        return $this->jsonResponse($request->path());
+        try {
+            // パラメータから検索
+            $results = MSubCategory::search_list($request);
+
+            $count = $results->count();
+            if ($count == 0) {
+                // 総件数
+                $this->_body['hit_count'] = 0;
+                // 取得データ
+                $this->_body['data'] = [];
+                return $this->jsonResponse($request->path());
+            }
+            // 総件数
+            $this->_body['hit_count'] = $count;
+            // 取得データ
+            $this->_body['data'] = $results;
+
+        } catch (\Exception $e) {
+            $this->_status = 0;
+            $this->_status_code = 500;
+            $this->_messages[] = $e->getMessage();
+            $this->error($e);
+        }
+
+        return $this->jsonResponse($request->path());
     }
 
 

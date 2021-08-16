@@ -513,12 +513,6 @@ class TSupport extends ModelBase
             }
         }
 
-        // 顧客・案件詳細画面内タブでの絞込み用
-        // 対応完了日
-        if ($param->filled('supported_complete_date')) {
-            $query = $query->whereDate('ts.supported_complete_date', $param->input('supported_complete_date'));
-        }
-
         return;
     }
 

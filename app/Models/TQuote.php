@@ -124,9 +124,9 @@ class TQuote extends ModelBase
      * 見積情報一覧検索
      *
      * @param Request $param 検索パラメータ
-     * @return mixed 取得データ
+     * @return mixed $query 取得クエリー
      */
-    public static function search_list(Request $param)
+    private static function _search_list(Request $param)
     {
         // 取得項目
         $query = TQuote::select(
@@ -144,12 +144,16 @@ class TQuote extends ModelBase
             DB::raw('sum(tq.tax_amount_cost) as tq_tax_amount_cost'),
             DB::raw('sum(tq.including_tax_total_cost) as tq_including_tax_total_cost'),
             DB::raw('sum(tq.adjustment_amount) as tq_adjustment_amount'),
+            'tq.field_cooperating_cost as tq_field_cooperating_cost',
+            'tq.call_cost as tq_call_cost',
             // 案件データ
             'tp.field_name as tp_field_name',
             'tp.name as tp_name as tp_name',
             'tp.construction_period_start as tp_construction_period_start',
             'tp.construction_period_end as tp_construction_period_end',
             DB::raw('sum(tp.order_price) as tp_order_price'),
+            'tp.contract_date as tp_contract_date',
+            'tp.cancel_date as tp_cancel_date',
             // 顧客データ
             'tc.name as tc_name',
             'tc.furigana as tc_furigana',
@@ -165,6 +169,8 @@ class TQuote extends ModelBase
             DB::raw('sum(to.completion_money) as to_completion_money'),
             // 見積明細データ
             DB::raw('sum(tqd.prime_cost) as tqd_prime_cost'),
+            DB::raw('sum(tqd.quantity) as tqd_quantity'),
+            DB::raw('sum(tqd.quote_unit_price) as tqd_quote_unit_price'),
             // 社員マスタ（案件担当者取得用）
             'me1.name as me1_name',
             // 社員マスタ（見積作成者取得用）
@@ -194,6 +200,25 @@ class TQuote extends ModelBase
         self::set_where_quote_detail($query, $param); // 見積明細
         self::set_where_customer($query, $param); // 顧客
         self::set_where_project($query, $param); // 案件
+
+        return $query;
+    }
+
+    /**
+     * 見積情報一覧検索
+     *
+     * @param Request $param 検索パラメータ
+     * @return Collection 取得データ
+     */
+    public static function search_list(Request $param): Collection
+    {
+        $query = self::_search_list($param);
+
+        $result_all = $query->get();
+        if ($result_all->count() == 0) {
+            return $result_all;
+        }
+
         // ソート条件（order by）
         if ($param->filled('sort_by')) {
             self::_set_order_by($query, $param->input('sort_by', 1), $param->input('highlow', 0), 1);
@@ -202,7 +227,7 @@ class TQuote extends ModelBase
         }
         if ($param->filled('limit')) {
             // オフセット条件（offset）
-            $query->skip($param->input('offset', 0));
+            $query->skip(($param->input('offset', 0) > 0) ? ($param->input('offset') * $param->input('limit')) : 0);
             // リミット条件（limit）
             $query->take($param->input('limit'));
         }
@@ -214,6 +239,19 @@ class TQuote extends ModelBase
 
         // 取得結果整形
         return self::get_format_column($result);
+    }
+
+    /**
+     * 見積情報一覧検索（全件）
+     *
+     * @param Request $param 検索パラメータ
+     * @return mixed 取得データ
+     */
+    public static function search_list_count(Request $param)
+    {
+        $query = self::_search_list($param);
+
+        return $query->get();
     }
 
     /**
@@ -283,12 +321,23 @@ class TQuote extends ModelBase
         if ($param->filled('call_cost_quote')) {
             $arr['call_cost_estimate'] = $param->input('call_cost_quote');
         }
-        // 最終更新者
         // TODO ログインユーザー名を登録
+        // 見積作成者
+        $arr['quote_creator'] = 1;
+        // 最終更新者
         $arr['last_updated_by'] = '管理者';
         // 編集中フラグ 登録済みにする
         $arr['is_editing'] = 0;
 
+        // 見積データの見積番号最大値取得
+        $max_quote_no = TQuote::get()->max('quote_no');
+        // 見積番号
+        if (is_null($max_quote_no)) {
+            $arr['quote_no'] = 'E000000001';
+        } else {
+            $quote_no = substr($max_quote_no, 1,  strlen($max_quote_no));
+            $arr['quote_no'] = 'E' . sprintf('%09d', ($quote_no + 1));
+        }
         if ($id && $param->filled('project_id')) {
             // 更新
             $quote = TQuote::find($id); // 見積データ
@@ -317,15 +366,6 @@ class TQuote extends ModelBase
             }
             $project->fill($arr)->save();
         } else {
-            // 見積データの見積番号最大値取得
-            $max_quote_no = TQuote::get()->max('quote_no');
-            // 見積番号
-            if (is_null($max_quote_no)) {
-                $arr['quote_no'] = 'E000000001';
-            } else {
-                $quote_no = substr($max_quote_no, 1,  strlen($max_quote_no));
-                $arr['quote_no'] = 'E' . sprintf('%09d', ($quote_no + 1));
-            }
             // 登録処理（見積）
             $quote = new TQuote();
             $quote->fill($arr)->save();
@@ -625,24 +665,35 @@ class TQuote extends ModelBase
 
             $arr = $item->toArray();
 
-            // 未割当金計算
+            // 計算処理
+            // 見積金額
+            // （見積明細データ．数量） × （見積明細データ．見積単価）
+            $price = floatval($arr['tqd_quantity']) * floatval($arr['tqd_quote_unit_price']);
+            // 原価金額
+            // （見積明細データ．数量） × （見積明細データ．原価）
+            $cost_amount = floatval($arr['tqd_quantity']) * floatval($arr['tqd_prime_cost']);
+            // 原価合計
+            // （見積明細データ．原価金額） + （見積明細データ．現場協力費（原価）） + （見積明細データ．予備原価（原価））
+            $cost_total_amount = floatval($cost_amount) + floatval($arr['tq_field_cooperating_cost']) + floatval($arr['tq_call_cost']);
+            // 未割当金
             // （案件データ．受注金額）－（受注データ．契約金）－（受注データ．着工金）－（受注データ．中間金1）－（受注データ．中間金2）－（受注データ．完工金）
             $unallocated_money =
                 floatval($arr['tp_order_price'] - $arr['to_contract_money'] - $arr['to_start_construction_money'] - $arr['to_intermediate_gold1'] - $arr['to_intermediate_gold2'] - $arr['to_completion_money']);
+
             $data = [
                 'project_id' => $arr['tq_project_id'], // 案件ID
                 'id' => $arr['tq_id'], // 見積ID
-                'order_flag' => $arr['tq_order_flag'], // 受注フラグ
+                'order_flag' => ModelBase::is_order($arr['tp_contract_date'], $arr['tp_cancel_date']), // 受注フラグ
                 'quote_no' => $arr['tq_quote_no'], // 見積番号
                 'quote_date' => $arr['tq_quote_date'], // 見積日
                 'field_name' => $arr['tp_field_name'], // 現場名称
                 'project_name' => $arr['tp_name'], // 案件名
                 'project_representative_name' => $arr['me1_name'], // 案件担当者
                 'quote_creator' => $arr['me2_name'], // 見積作成者
-                'quote_price' => floatval($arr['tq_quote_price']), // 見積金額
+                'quote_price' => $price, // 見積金額
                 'tax_amount_quote' => floatval($arr['tq_tax_amount_quote']), // 消費税額（見積）
                 'including_tax_total_quote' => floatval($arr['tq_including_tax_total_quote']), // 税込合計見積
-                'cost_sum' => floatval($arr['tq_cost_sum']), // 原価合計
+                'cost_sum' => $cost_total_amount, // 原価合計
                 'tax_amount_cost' => floatval($arr['tq_tax_amount_cost']), // 消費税額（原価）
                 'including_tax_total_cost' => floatval($arr['tq_including_tax_total_cost']), // 税込合計原価
                 'adjustment_amount' => floatval($arr['tq_adjustment_amount']), // 調整額
@@ -695,5 +746,55 @@ class TQuote extends ModelBase
         ];
 
         return $data;
+    }
+
+    /**
+     * 見積情報フリーワード検索
+     *
+     * @param Request $param 検索パラメータ
+     * @return Collection 取得データ
+     */
+    public static function search_list_freeword(Request $param): Collection
+    {
+        $query = self::_search_list($param);
+
+        // 検索条件（or）
+        if ($param->filled('keyword') || !is_null($param->input('keyword'))) {
+            self::set_orwhere($query, $param->input('keyword'));
+        }
+
+        // ソート条件（order by）
+        if ($param->filled('sort_by')) {
+            self::_set_order_by($query, $param->input('sort_by', 1), $param->input('highlow', 0), 1);
+        } else {
+            self::_set_order_by($query, $param->input('filter_by', 1), $param->input('highlow', 0), 2);
+        }
+        if ($param->filled('limit')) {
+            // オフセット条件（offset）
+            $query->skip(($param->input('offset', 0) > 0) ? ($param->input('offset') * $param->input('limit')) : 0);
+            // リミット条件（limit）
+            $query->take($param->input('limit'));
+        }
+
+        $result = $query->get();
+        if ($result->count() == 0) {
+            return $result;
+        }
+
+        // 取得結果整形
+        return self::get_format_column($result);
+    }
+
+    public static function set_orwhere(&$query, String $keyword)
+    {
+        $query->where(function($_query) use ($keyword) {
+            // 案件名
+            $_query->orWhere('tp.name', 'like', '%' . $keyword . '%');
+            // 現場名称
+            $_query->orWhere('tp.field_name',  'like', '%' . $keyword . '%');
+            // 見積作成者
+            $_query->orWhere('me2.name',  'like', '%' . $keyword . '%');
+        });
+        return;
     }
 }

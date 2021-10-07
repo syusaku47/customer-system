@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 /**
  * Class TSupport<br>
@@ -115,6 +116,16 @@ class TSupport extends ModelBase
     }
 
     /**
+     * 媒体に紐づく媒体マスタ取得（1対1）
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasOne
+     */
+    public function source_supported(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(MSource::class, 'id', 'media');
+    }
+
+    /**
      * ソート用カラム定義
      *
      * @var string[]
@@ -127,6 +138,7 @@ class TSupport extends ModelBase
         4 => 'tp.project_representative', // 案件担当者
         5 => 'ts.supported_person', // 対応者
         6 => 'ts.supported_complete_date', // 対応完了日
+        7 => 'ts.updated_at', // 更新日時
     ];
 
     /**
@@ -137,7 +149,8 @@ class TSupport extends ModelBase
     protected const SORT_BY_DETAIL_COLUMN = [
         0 => 'ts.is_fixed', // 対応済フラグ
         1 => 'tp.name', // 案件名
-        2 => 'ts.reception_date, ts.supported_date', // 受付日、対応日（日付日時）
+        //2 => 'ts.reception_date, ts.supported_date', // 受付日、対応日（日付日時）
+        2 => 'ts.reception_date, ts.supported_complete_date', // 受付日、対応日（日付日時）
         3 => 'ts.category', // カテゴリ
         4 => 'ts.supported_history_name', // 件名（対応履歴名）
         5 => 'ts.supported_person', // 対応者
@@ -150,10 +163,10 @@ class TSupport extends ModelBase
      * 対応履歴情報一覧検索
      *
      * @param Request $param 検索パラメータ
-     * @return mixed 取得データ
+     * @return mixed $query 取得クエリー
      * @throws Exception
      */
-    public static function search_list(Request $param)
+    private static function _search_list(Request $param)
     {
         // 取得項目
         $query = TSupport::select(
@@ -169,10 +182,15 @@ class TSupport extends ModelBase
             'ts.supported_history_name as ts_supported_history_name',
             'ts.reception_date as ts_reception_date',
             'ts.supported_date as ts_supported_date',
+            'ts.updated_at as ts_updated_at',
+            'ts.image_name as image_name',
+            'ts.association as association',
             // 顧客データ
+            'tc.id as tc_id',
             'tc.name as tc_name',
             'tc.furigana as tc_furigana',
             // 案件データ
+            'tp.id as tp_id',
             'tp.name as tp_name',
             'tp.project_representative as tp_project_representative',
             // 対応履歴マスタ
@@ -191,6 +209,26 @@ class TSupport extends ModelBase
         self::set_where_join($query, $param); // 対応履歴
         self::set_where_customer_join($query, $param); // 顧客
         self::set_where_project_join($query, $param); // 案件
+
+        return $query;
+    }
+
+    /**
+     * 対応履歴情報一覧検索
+     *
+     * @param Request $param 検索パラメータ
+     * @return Collection 取得データ
+     * @throws Exception
+     */
+    public static function search_list(Request $param): Collection
+    {
+        $query = self::_search_list($param);
+
+        $result_all = $query->get();
+        if ($result_all->count() == 0) {
+            return $result_all;
+        }
+
         // ソート条件（order by）
         if ($param->filled('sort_by')) {
             self::_set_order_by($query, $param->input('sort_by', 1), $param->input('highlow', 0), 1);
@@ -199,7 +237,7 @@ class TSupport extends ModelBase
         }
         if ($param->filled('limit')) {
             // オフセット条件（offset）
-            $query->skip($param->input('offset', 0));
+            $query->skip(($param->input('offset', 0) > 0) ? ($param->input('offset') * $param->input('limit')) : 0);
             // リミット条件（limit）
             $query->take($param->input('limit'));
         }
@@ -211,6 +249,20 @@ class TSupport extends ModelBase
 
         // 取得結果整形
         return self::get_format_column($result);
+    }
+
+    /**
+     * 対応履歴情報一覧検索（全件）
+     *
+     * @param Request $param 検索パラメータ
+     * @return mixed 取得データ
+     * @throws Exception
+     */
+    public static function search_list_count(Request $param)
+    {
+        $query = self::_search_list($param);
+
+        return $query->get();
     }
 
     /**
@@ -267,6 +319,9 @@ class TSupport extends ModelBase
         }]) // 店舗マスタ（対応担当店舗）
         ->with(['supported_history' => function($q) {
             $q->select('name', 'id')->where('is_valid', 1);
+        }])
+        ->with(['source_supported' => function($q) {
+            $q->select('name', 'id')->where('is_valid', 1);
         }]); // 対応履歴マスタ
 
         $result = $query->find($id);
@@ -304,6 +359,28 @@ class TSupport extends ModelBase
             $arr['detail'] = $param->input('supported_detail');
         }
 
+        //対応日カラムと対応完了日の対応
+        if ($param->filled('supported_date') && ! $param->filled('supported_complete_date')) {
+            $arr['supported_complete_date'] = $param->input('supported_date');
+        } else if (! $param->filled('supported_date') && $param->filled('supported_complete_date')) {
+            $arr['supported_date'] = $param->input('supported_complete_date');
+        } else if (! $param->filled('supported_date') && ! $param->filled('supported_complete_date')) {
+            if (!isset($arr['supported_date'])) {
+                $arr['supported_date'] = null;
+            }
+            if (!isset($arr['supported_complete_date'])) {
+                $arr['supported_complete_date'] = null;
+            }
+        }
+
+        //対応区分
+        if ($param->filled('is_fixed')) {
+            $arr['supported_kubun'] = $param->input('is_fixed');
+        } else {
+            $arr['supported_kubun'] = 0;
+            $arr['is_fixed']        = 0;
+        }
+
         // 最終更新者
         // TODO ログインユーザー名を登録
         $arr['last_updated_by'] = '管理者';
@@ -319,13 +396,18 @@ class TSupport extends ModelBase
             if ($param->hasFile('image')) {
                 $format =  strrpos($obj->image_name, '.') >= 0 ? substr($obj->image_name, strrpos($obj->image_name, '.')) : '';
                 // 登録済みの画像を削除
-                $file_path = ModelBase::STORAGE_PATH[1] . $obj->association . $format;
-                Storage::delete($file_path);
+                $file_path = config('filesystems.disks.s3.directory') . "/" . $obj->association . $format;
+                Storage::disk('s3')->delete($file_path);
 
-                $association = str_random();
+                //$association = str_random();
+                $association = Str::uuid();
                 // 画像をStorageに保存
-                Storage::putFileAs(ModelBase::STORAGE_PATH[1], $param->file('image')
-                    , $association . '.' . $param->file('image')->clientExtension());
+                Storage::disk('s3')->putFileAs(
+                    config('filesystems.disks.s3.directory'),
+                    $param->file('image'),
+                    $association . '.' . $param->file('image')->clientExtension(),
+                    'public'
+                );
                 // ファイル名（拡張子を含む）
                 $file_name = $param->file('image')->getClientOriginalName();
                 // ファイル識別子
@@ -339,14 +421,19 @@ class TSupport extends ModelBase
         } else {
             // 対応区分
             // 登録時は未対応
-            $arr['supported_kubun'] = 0;
+            //$arr['supported_kubun'] = 0;
 
             $file_name = null;
             if ($param->hasFile('image')) {
-                $association = str_random();
+                //$association = str_random();
+                $association = Str::uuid();
                 // 画像をStorageに保存
-                Storage::putFileAs(ModelBase::STORAGE_PATH[1], $param->file('image')
-                    , $association . '.' . $param->file('image')->clientExtension());
+                Storage::disk('s3')->putFileAs(
+                    config('filesystems.disks.s3.directory'),
+                    $param->file('image'),
+                    $association . '.' . $param->file('image')->clientExtension(),
+                    'public'
+                );
                 // ファイル名（拡張子を含む）
                 $file_name = $param->file('image')->getClientOriginalName();
                 // ファイル識別子
@@ -382,15 +469,19 @@ class TSupport extends ModelBase
             $query = $query->where('ts.category', $param->input('category'));
         }
         // 対応区分
-        if ($param->filled('supported_kubun') && $param->input('supported_kubun') != 1) {
-            $query = $query->where('ts.supported_kubun', $param->input('supported_kubun'));
+        if ($param->filled('supported_kubun')) {
+            if ($param->input('supported_kubun') == 0) {
+                $query = $query->where('ts.is_fixed', 0);
+            } else if ($param->input('supported_kubun') == 2) {
+                $query = $query->where('ts.is_fixed', 1);
+            }
         }
         // 文字列検索
         if ($param->filled('word')) {
             $query = $query->where(function ($q) use ($param) {
-                $q->where('ts.supported_history_name', 'like', '%' . $param->input('supported_history_name') . '%') // タイトル（対応履歴名）
-                ->orWhere('ts.detail', 'like', '%' . $param->input('detail') . '%') // 詳細内容
-                ->orWhere('ts.supported_content', 'like', '%' . $param->input('supported_content') . '%'); // 対応内容
+                $q->where('ts.supported_history_name', 'like', '%' . $param->input('word') . '%') // タイトル（対応履歴名）
+                ->orWhere('ts.detail', 'like', '%' . $param->input('word') . '%') // 詳細内容
+                ->orWhere('ts.supported_content', 'like', '%' . $param->input('word') . '%'); // 対応内容
             });
         }
         // キーワード検索
@@ -506,11 +597,18 @@ class TSupport extends ModelBase
         }
         // 対応済みフラグ
         if ($param->filled('is_fixed')) {
-            if ($param->input('is_fixed') == 1) {
-                $query = $query->where('ts.supported_kubun', 2); // 対応済
-            } else {
-                $query = $query->where('ts.supported_kubun', 0); // 未対応
-            }
+            //if ($param->input('is_fixed') == 1) {
+            //    $query = $query->where('ts.supported_kubun', 2); // 対応済
+            //} else {
+            //    $query = $query->where('ts.supported_kubun', 0); // 未対応
+            //}
+            $query = $query->where('ts.is_fixed', $param->input('is_fixed'));
+        }
+
+        // 顧客・案件詳細画面内タブでの絞込み用
+        // 対応完了日
+        if ($param->filled('supported_complete_date')) {
+            $query = $query->whereDate('ts.supported_complete_date', $param->input('supported_complete_date'));
         }
 
         return;
@@ -648,9 +746,17 @@ class TSupport extends ModelBase
     {
         $results = new Collection();
         foreach ($collection as $item) {
-
             $arr = $item->toArray();
-
+            $image_path = null;
+            if ($arr['image_name'] && $arr['association']) {
+                $format =  strrpos($arr['image_name'], '.') >= 0 ? substr($arr['image_name'], strrpos($arr['image_name'], '.')) : '';
+                $filePath = config('filesystems.disks.s3.directory') . "/" . $arr['association'] . $format;
+                if (Storage::disk('s3')->exists($filePath)) {
+                    $image_path = config('filesystems.disks.s3.url') . "/"
+                            . config('filesystems.disks.s3.bucket') . "/"
+                            . $filePath;
+                }
+            }
             $data = [
                 'customer_id' => $arr['ts_customer_id'], // 顧客ID
                 'project_id' => $arr['ts_project_id'], // 案件ID
@@ -665,6 +771,8 @@ class TSupport extends ModelBase
                 'supported_person' => $arr['supported_person_name'], // 対応者
                 'supported_complete_date' => $arr['ts_supported_complete_date'], // 対応完了日
                 'supported_history_name' => $arr['ts_supported_history_name'], // 対応履歴名
+                'image_name' => $arr['image_name'], // ファイル名
+                'image_path' => $image_path, // s3上ファイル名
             ];
             $results->push($data);
         }
@@ -685,11 +793,11 @@ class TSupport extends ModelBase
         $image = null;
         if ($obj->image_name && $obj->association) {
             $format =  strrpos($obj->image_name, '.') >= 0 ? substr($obj->image_name, strrpos($obj->image_name, '.')) : '';
-            $filePath = ModelBase::STORAGE_PATH[1] . $obj->association . $format;
-            if (Storage::exists($filePath)) {
-                $mimeType = Storage::mimeType($filePath);
-                $headers = ['Content-Type' => $mimeType];
-                $image = base64_encode(Storage::download($filePath, $obj->image_name, $headers));
+            $filePath = config('filesystems.disks.s3.directory') . "/" . $obj->association . $format;
+            if (Storage::disk('s3')->exists($filePath)) {
+                $image = config('filesystems.disks.s3.url') . "/"
+                        . config('filesystems.disks.s3.bucket') . "/"
+                        . $filePath;
             }
         }
 
@@ -698,8 +806,8 @@ class TSupport extends ModelBase
             'project_id' => $obj->project_id, // 案件ID
             'id' => $obj->id, // 対応履歴ID
             'reception_date' => CommonUtility::is_exist_variable($obj->reception_time) ? CommonUtility::convert_timestamp($obj->reception_time, 'Y/m/d') : '', // 受付日
-            'reception_hour' => CommonUtility::is_exist_variable($obj->reception_time) ? CommonUtility::convert_timestamp($obj->reception_time, 'H') : '', // 受付時
-            'reception_minutes' => CommonUtility::is_exist_variable($obj->reception_time) ? CommonUtility::convert_timestamp($obj->reception_time, 'i') : '', // 受付分
+            'reception_hour' => CommonUtility::is_exist_variable($obj->reception_time) ? (int)CommonUtility::convert_timestamp($obj->reception_time, 'H') : '', // 受付時
+            'reception_minutes' => CommonUtility::is_exist_variable($obj->reception_time) ? (int)CommonUtility::convert_timestamp($obj->reception_time, 'i') : '', // 受付分
             'customer_responsible_store' => CommonUtility::is_exist_variable($obj->customer) ? (CommonUtility::is_exist_variable($obj->customer->store) ? $obj->customer->store['id'] : '') : '', // 受付担当店舗
             'customer_responsible_store_name' => CommonUtility::is_exist_variable($obj->customer) ? (CommonUtility::is_exist_variable($obj->customer->store) ? $obj->customer->store['name'] : '') : '', // 受付担当店舗名称
             'customer_representative' => CommonUtility::is_exist_variable($obj->customer) ? (CommonUtility::is_exist_variable($obj->customer->employee) ? $obj->customer->employee['id'] : '') : '', // 受付担当担当者
@@ -707,6 +815,7 @@ class TSupport extends ModelBase
             'category' => $obj->category, // カテゴリ
             'category_name' => CommonUtility::is_exist_variable($obj->supported_history) ? $obj->supported_history['name'] : '', // カテゴリ名称
             'media' => $obj->media, // 媒体
+            'media_name' => CommonUtility::is_exist_variable($obj->source_supported) ? $obj->source_supported['name'] : '', // 媒体名称
             'customer_name' => CommonUtility::is_exist_variable($obj->customer) ? $obj->customer['name'] : '', // 顧客名
             'project_name' => CommonUtility::is_exist_variable($obj->project) ? $obj->project['name'] : '', // 案件名
             'image' => $image, // 画像
@@ -727,5 +836,58 @@ class TSupport extends ModelBase
         ];
 
         return $data;
+    }
+
+    /**
+     * 対応履歴情報フリーワード検索
+     *
+     * @param Request $param 検索パラメータ
+     * @return Collection 取得データ
+     * @throws Exception
+     */
+    public static function search_list_freeword(Request $param): Collection
+    {
+        $query = self::_search_list($param);
+
+        // 検索条件（or）
+        if ($param->filled('keyword') || !is_null($param->input('keyword'))) {
+            self::set_orwhere($query, $param->input('keyword'));
+        }
+
+        // ソート条件（order by）
+        if ($param->filled('sort_by')) {
+            self::_set_order_by($query, $param->input('sort_by', 1), $param->input('highlow', 0), 1);
+        } else {
+            self::_set_order_by($query, $param->input('filter_by', 2), $param->input('highlow', 0), 2);
+        }
+        if ($param->filled('limit')) {
+            // オフセット条件（offset）
+            $query->skip(($param->input('offset', 0) > 0) ? ($param->input('offset') * $param->input('limit')) : 0);
+            // リミット条件（limit）
+            $query->take($param->input('limit'));
+        }
+
+        $result = $query->get();
+        if ($result->count() == 0) {
+            return $result;
+        }
+
+        // 取得結果整形
+        return self::get_format_column($result);
+    }
+
+    public static function set_orwhere(&$query, String $keyword)
+    {
+        $query->where(function($_query) use ($keyword) {
+            // 顧客名
+            $_query->orWhere('tc.name', 'like', '%' . $keyword . '%');
+            // 案件名
+            $_query->orWhere('tp.name', 'like', '%' . $keyword . '%');
+            // 対応履歴名
+            $_query->orWhere('ts.supported_history_name', 'like', '%' . $keyword . '%');
+            // 対応日
+            $_query->orWhereDate('ts.supported_date', $keyword);
+        });
+        return;
     }
 }

@@ -16,8 +16,12 @@ class ChangeTFilesTable extends Migration
         Schema::table('t_files', function (Blueprint $table) {
             $table->integer('project_id')->nullable()->comment('案件ID')->unsigned()->change();
             $table->dropForeign('t_files_customer_id_foreign');
+            $table->string('file_name', 50)->comment('ファイル名')->change(); // ファイル拡張子を含まない
+
+
         });
         Schema::table('t_files', function (Blueprint $table) {
+
             // 外部キー制約
             $table->foreign('customer_id')->references('id')->on('t_customers'); // 顧客データ
         });

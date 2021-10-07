@@ -4,10 +4,12 @@ namespace App\Models;
 
 use App\Libraries\CommonUtility;
 use Carbon\Carbon;
+use Exception;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
-
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Class TCustomer<br>
@@ -106,6 +108,13 @@ class TCustomer extends ModelBase
         'last_updated_by',
     ];
 
+    /*
+     * 形のキャストを定義
+     */
+    protected $casts = [
+        'is_deficiency' => 'boolean'
+    ];
+
     protected static $csv_columns = [
         'sales_shop' =>'営業担当（店舗）',
         'sales_contact' =>'営業担当（担当者）',
@@ -169,8 +178,71 @@ class TCustomer extends ModelBase
         'ob_flag' =>'OBフラグ',
     ];
 
+    protected static $employee_cd = [
+        "nagai" =>1,
+        "amino" =>2,
+        "admin" =>3,
+        "bunkop" =>4,
+        "niikura" =>5,
+        "yajima" =>6,
+        "chinen" =>7,
+        "kato" =>8,
+        "nojiri" =>9,
+        "yosinaga" =>10,
+        "mitsuru" =>11,
+        "tano" =>12,
+        "yamada" =>13,
+        "hosouchi" =>14,
+        "matsui" =>15,
+        "saito" =>16,
+        "yashima" =>17,
+        "yoshinag" =>18,
+        "mochida" =>19,
+        "suzuki" =>20,
+        "kawamura" =>21,
+        "soumu" =>22,
+        "ikegami" =>23,
+        "kobayash" =>24,
+        "handa" =>25,
+        "tsuji" =>26,
+        "miyazaki" =>27,
+        "watanabe" =>28,
+        "kodama" =>29,
+        "wata330" =>30,
+        "aoki" =>31,
+        "kaneko" =>32,
+        "ezaki" =>33,
+        "uemori" =>34,
+        "kojima" =>35,
+        "tanaka" =>36,
+    ];
+
     protected static function get_columns(){
         return static::$csv_columns;
+    }
+
+    protected static function get_employee_codes(){
+        return static::$employee_cd;
+    }
+
+    /**
+     * 顧客と紐づく案件データ取得（1対1）
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\hasOne
+     */
+    public function project(): \Illuminate\Database\Eloquent\Relations\hasOne
+    {
+        return $this->hasOne(TProject::class, 'id');
+    }
+
+    /**
+     * 顧客と紐づく家族データ取得（1対1）
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\hasOne
+     */
+    public function family(): \Illuminate\Database\Eloquent\Relations\hasOne
+    {
+        return $this->hasOne(TFamily::class, 'id');
     }
 
     /**
@@ -272,9 +344,10 @@ class TCustomer extends ModelBase
      * 顧客情報一覧検索
      *
      * @param Request $param 検索パラメータ
-     * @return mixed 取得データ
+     * @return mixed $query 取得クエリー
+     * @throws Exception
      */
-    public static function search_list(Request $param)
+    private static function _search_list(Request $param)
     {
         // 取得項目
         $query = TCustomer::select(
@@ -323,11 +396,31 @@ class TCustomer extends ModelBase
 
         // 検索条件（where）
         self::set_where($query, $param);
+
+        return $query;
+    }
+
+    /**
+     * 顧客情報一覧検索
+     *
+     * @param Request $param 検索パラメータ
+     * @return Collection 取得データ
+     * @throws Exception
+     */
+    public static function search_list(Request $param): Collection
+    {
+        $query = self::_search_list($param);
+
+        $result_all = $query->get();
+        if ($result_all->count() == 0) {
+            return $result_all;
+        }
+
         // ソート条件（order by）
         self::_set_order_by($query, $param->input('sort_by', 3), $param->input('highlow', 0));
         if ($param->filled('limit')) {
             // オフセット条件（offset）
-            $query->skip($param->input('offset', 0));
+            $query->skip(($param->input('offset', 0) > 0) ? ($param->input('offset') * $param->input('limit')) : 0);
             // リミット条件（limit）
             $query->take($param->input('limit'));
         }
@@ -339,6 +432,177 @@ class TCustomer extends ModelBase
 
         // 取得結果整形
         return self::get_format_column($result, $param);
+    }
+
+    /**
+     * 顧客情報一覧検索（全件）
+     *
+     * @param Request $param 検索パラメータ
+     * @return mixed 取得データ
+     * @throws Exception
+     */
+    public static function search_list_count(Request $param)
+    {
+        $query = self::_search_list($param);
+
+        return $query->get();
+    }
+
+    /**
+     * CSV出力管理用顧客情報一覧検索
+     *
+     * @param Request $param 検索パラメータ
+     * @return mixed $query 取得クエリー
+     * @throws Exception
+     */
+    private static function _search_csv_list(Request $param)
+    {
+        // 取得項目
+        $query = TCustomer::select(
+            'id',
+            'name',
+            'tel_no',
+            'prefecture',
+            'city',
+            'address',
+            'building_name',
+            'ob_flag',
+            'rank',
+            'total_work_price_max',
+            'work_times_max',
+            'post_no',
+            'wedding_anniversary',
+            'sales_contact',
+        )->where('is_editing', 0)->with(['project' => function($q) use($param) {
+            $q->select('id', 'customer_id', 'construction_status', 'completion_date');
+            // 工事状況
+            if (CommonUtility::is_exist_variable_array($param->input('construction_status'))
+                && !is_null($param->input('construction_status')[0])) {
+                foreach ($param->input('construction_status') as $item) {
+                    $q->orWhere('construction_status', ModelBase::CONSTRUCTION_STATUS[$item]);
+                }
+            }
+        }]) // 案件データ
+        ->with(['family' => function($q) use($param) {
+            $q->select('id', 'name', 'relationship', 'mobile_phone', 'birth_date');
+            // 家族お名前
+            if ($param->filled('family_name')) {
+                $q->where($param->input('name'));
+            }
+            // 続柄
+            if ($param->filled('relationship')) {
+                $q->where($param->input('relationship'));
+            }
+            // 携帯番号
+            if ($param->filled('mobile_phone')) {
+                $q->where($param->input('mobile_phone'));
+            }
+            // 生年月日開始～終了
+            if (($param->filled('birth_month_start') && $param->filled('birth_day_start'))
+                && ($param->filled('birth_month_end') && $param->filled('birth_day_end'))) {
+                $q->where(function ($q) use ($param) {
+                    // 開始月0埋め
+                    $birth_month_start = strlen($param->input('birth_month_start')) == 1
+                        ? printf('%01d', $param->input('birth_month_start')) : $param->input('birth_month_start');
+                    // 開始日0埋め
+                    $birth_day_start = strlen($param->input('birth_day_start')) == 1
+                        ? printf('%01d', $param->input('birth_day_start')) : $param->input('birth_day_start');
+                    // 終了月0埋め
+                    $birth_month_end = strlen($param->input('birth_month_end')) == 1
+                        ? printf('%01d', $param->input('birth_month_end')) : $param->input('birth_month_end');
+                    // 終了日0埋め
+                    $birth_day_end = strlen($param->input('birth_day_end')) == 1
+                        ? printf('%01d', $param->input('birth_day_end')) : $param->input('birth_day_end');
+
+                    // 生年月日_開始、終了の期間
+                    $q->where('wedding_anniversary', '>=', new \DateTime($birth_month_start . '/' . $birth_day_start))
+                        ->where('wedding_anniversary', '<=', new \DateTime($birth_month_end . '/' . $birth_day_end));
+                });
+            } else if (($param->filled('birth_month_start') && $param->filled('birth_day_start'))
+                && (is_null($param->input('birth_month_end')) || is_null($param->input('birth_day_end')))) {
+                // 開始月0埋め
+                $birth_month_start = strlen($param->input('birth_month_start')) == 1
+                    ? printf('%01d', $param->input('birth_month_start')) : $param->input('birth_month_start');
+                // 開始日0埋め
+                $birth_day_start = strlen($param->input('birth_day_start')) == 1
+                    ? printf('%01d', $param->input('birth_day_start')) : $param->input('birth_day_start');
+
+                // 生年月日_開始以降
+                $q->where('wedding_anniversary', '>=', new \DateTime($birth_month_start . '/' . $birth_day_start));
+            } else if ((is_null($param->input('birth_month_start')) || is_null($param->input('birth_day_start')))
+                && ($param->filled('birth_month_end') && $param->filled('birth_day_end'))) {
+                // 終了月0埋め
+                $birth_month_end = strlen($param->input('birth_month_end')) == 1
+                    ? printf('%01d', $param->input('birth_month_end')) : $param->input('birth_month_end');
+                // 終了日0埋め
+                $birth_day_end = strlen($param->input('birth_day_end')) == 1
+                    ? printf('%01d', $param->input('birth_day_end')) : $param->input('birth_day_end');
+
+                // 生年月日_終了以前
+                $q->where('wedding_anniversary', '<=', new \DateTime($birth_month_end . '/' . $birth_day_end));
+            }
+        }]) // 家族データ
+        ->with(['employee' => function($q) {
+            $q->select('name', 'id')->where('is_valid', 1);
+        }]); // 社員マスタ
+
+        // 検索条件（where）
+        self::set_where($query, $param);
+
+        return $query;
+    }
+
+    /**
+     * CSV出力管理用顧客情報一覧検索
+     *
+     * @param Request $param 検索パラメータ
+     * @return Collection 取得データ
+     * @throws Exception
+     */
+    public static function search_csv_list(Request $param): Collection
+    {
+        $query = self::_search_csv_list($param);
+
+        $result_all = $query->get();
+        if ($result_all->count() == 0) {
+            return $result_all;
+        }
+
+        // ソート条件（order by）
+        self::_set_order_by($query, $param->input('sort_by', 3), $param->input('highlow', 0));
+        if ($param->filled('limit')) {
+            // オフセット条件（offset）
+            $query->skip(($param->input('offset', 0) > 0) ? ($param->input('offset') * $param->input('limit')) : 0);
+            // リミット条件（limit）
+            $query->take($param->input('limit'));
+        }
+
+        $result = $query->get();
+
+        // 取得結果整形
+        if ($param->path() == 'api/csv/customer') {
+            return self::get_format_column_csv_customer($result, $param);
+        } else if ($param->path() == 'api/csv/birthday') {
+            return self::get_format_column_csv_birthday($result);
+        } else if ($param->path() == 'api/csv/weddinganniversary') {
+            return self::get_format_column_csv_wedding($result);
+        }
+
+        return self::get_format_column_csv_customer($result, $param);
+    }
+
+    /**
+     * CSV出力管理用顧客情報一覧検索（全件）
+     *
+     * @param Request $param 検索パラメータ
+     * @return mixed 取得データ
+     * @throws Exception
+     */
+    public static function search_csv_list_count(Request $param)
+    {
+        $query = self::_search_csv_list($param);
+
+        return $query->get();
     }
 
     /**
@@ -429,9 +693,9 @@ class TCustomer extends ModelBase
      *
      * @param Request $param
      * @param int|null $id
-     * @return string
+     * @return array
      */
-    public static function upsert(Request $param, int $id = null): string
+    public static function upsert(Request $param, int $id = null): array
     {
         $arr = $param->all();
         // DB登録・更新用にパラメータ変換
@@ -448,7 +712,11 @@ class TCustomer extends ModelBase
         // 間取り
         $arr['madori_id'] = $param->input('madori');
         // 築年数
-        $arr['building_age'] = str_replace('-', '', $param->input('building_age'));
+        $arr_building_age = explode("-", $param->input('building_age'));
+        $now    = Carbon::now();
+        $target = Carbon::create($arr_building_age[0], $arr_building_age[1]);
+        echo "【 " . str_replace('-', '', $target->diffInYears($now)) . " 】\n";
+        $arr['building_age'] = str_replace('-', '', $target->diffInYears($now));
         // 見込み部位リスト
         if ($param->filled('expected_part_list')) {
             $arr['expected_part_list'] = implode(' ', $param->input('expected_part_list'));
@@ -473,30 +741,93 @@ class TCustomer extends ModelBase
 
         if ($id) {
             // 更新
-            $obj = TCustomer::find($id);
-            if (is_null($obj)) {
-                return '404';
+            $customer = TCustomer::find($id);
+            if (is_null($customer)) {
+                return ["code" => '404'];
             }
 
-            // 更新処理
-            $obj->fill($arr)->save();
-        } else {
-            // 顧客TEL重複チェック
-            if ($param->filled('tel_no')) {
-                // -を除いた数字で検索する
-                $result = TCustomer::whereRaw('replace(tel_no, "-", "") like ?'
-                    , ['tel_no' => '%' . str_replace('-', '', $param->input('tel_no')) . '%'])->first(); // 電話番号
-                if (!is_null($result)) {
-                    return 'err_tel_no';
+            if ( strcmp($customer->lat, $param->input('lat')) !== 0 || strcmp($customer->lng, $param->input('lng')) !== 0 ) {
+                //ジオコーディング重複チェック        
+                $result = TCustomer::
+                            where('lat',$param->input('lat'))->
+                            where('lng',$param->input('lng'))->
+                            first();
+                if (!empty($result)) {
+                    return [
+                        "code" => 'err_geocoding',
+                        "name" => $result -> name,
+                        "keisho" => $result -> keisho,
+                    ];
                 }
             }
 
+            // 顧客TEL重複チェック
+            if ($param->filled('tel_no')) {
+                // -を除いた数字で検索する
+                $result = TCustomer::whereRaw('replace(tel_no, "-", "") like ?', ['tel_no' => '%' . str_replace('-', '', $param->input('tel_no')) . '%'])->where('id', '<>', $customer->id)->first(); // 電話番号
+                if (!is_null($result)) {
+                    return ["code" => 'err_tel_no'];
+                }
+            }
+            // 更新処理
+            //$customer->fill($arr)->save();
+        } else {
+
+            //ジオコーディング重複チェック        
+            $result = TCustomer::
+                        where('lat',$param->input('lat'))->
+                        where('lng',$param->input('lng'))->
+                        first();
+            if (!empty($result)) {
+                return [
+                    "code" => 'err_geocoding',
+                    "name" => $result -> name,
+                    "keisho" => $result -> keisho,
+                ];
+            }
+            // 顧客TEL重複チェック
+            if ($param->filled('tel_no')) {
+                // -を除いた数字で検索する
+                $result = TCustomer::whereRaw('replace(tel_no, "-", "") like ?', ['tel_no' => '%' . str_replace('-', '', $param->input('tel_no')) . '%'])->first(); // 電話番号
+                if (!is_null($result)) {
+                    return ["code" => 'err_tel_no'];
+                }
+            }
             // 登録処理
             $customer = new TCustomer();
+            //$customer->fill($arr)->save();
+        }
+        // トランザクション開始
+        DB::beginTransaction();
+        try {
+            // 登録・更新処理
             $customer->fill($arr)->save();
+
+            // 入力不備フラグ更新
+            $is_deficiency = 0;
+            if ( empty($customer->name) ||  empty($customer->furigana)
+                 || empty($customer->post_no) ||  empty($customer->prefecture)
+                 || empty($customer->city) ||  empty($customer->address)
+                 || empty($customer->area_id) ||  empty($customer->tel_no)
+                 ) {
+                // 入力不備フラグをON
+                $is_deficiency = 1;
+            }
+            $customer->is_deficiency = $is_deficiency;
+            $customer->save();
+
+            //コミット
+            DB::commit();
+        }
+        catch (\Exception $e) {
+            Log::error($e->getMessage());
+
+            //ロールバック
+            DB::rollBack();
+            throw new \Exception("顧客情報の更新に失敗しました");
         }
 
-        return 'ok';
+        return ["code" => 'ok'];
     }
 
     /**
@@ -507,19 +838,33 @@ class TCustomer extends ModelBase
      */
     public static function get_id(Request $param): int
     {
-        $arr = $param->all();
-        // 必須項目をダミーで登録
-        $arr['sales_contact'] = 1; // 営業担当（担当者）
-        $arr['name'] = 'ダミー'; // 顧客_名称
-        $arr['post_no'] = '1112222'; // 郵便番号
-        $arr['prefecture'] = 'ダミー'; // 住所_都道府県
-        $arr['city'] = 'ダミー'; // 住所_市区町村
-        $arr['address'] = 'ダミー'; // 住所_地名番地
-        $arr['last_updated_by'] = 'ダミー'; // 最終更新者
-        $arr['is_editing'] = 1; // 編集中フラグ 編集中にする
-        // 登録処理
-        $customer = new TCustomer();
-        $customer->fill($arr)->save();
+        // トランザクション開始
+        DB::beginTransaction();
+        try {
+            $arr = $param->all();
+            // 必須項目をダミーで登録
+            $arr['sales_contact'] = 1; // 営業担当（担当者）
+            $arr['name'] = 'ダミー'; // 顧客_名称
+            $arr['post_no'] = '1112222'; // 郵便番号
+            $arr['prefecture'] = 'ダミー'; // 住所_都道府県
+            $arr['city'] = 'ダミー'; // 住所_市区町村
+            $arr['address'] = 'ダミー'; // 住所_地名番地
+            $arr['last_updated_by'] = 'ダミー'; // 最終更新者
+            $arr['is_editing'] = 1; // 編集中フラグ 編集中にする
+            // 登録処理
+            $customer = new TCustomer();
+            $customer->fill($arr)->save();
+
+            //コミット
+            DB::commit();
+        }
+        catch (\Exception $e) {
+            Log::error($e->getMessage());
+
+            //ロールバック
+            DB::rollBack();
+            throw new \Exception("顧客IDの発行に失敗しました");
+        }
 
         return TCustomer::get()->max('id');
     }
@@ -531,12 +876,26 @@ class TCustomer extends ModelBase
      */
     public static function remove_edit_data(int $id)
     {
-        // ペット情報削除処理
-        TPet::where('customer_id', $id)->delete();
-        // ご家族情報削除処理
-        TFamily::where('customer_id', $id)->delete();
-        // 顧客情報削除処理
-        TCustomer::destroy($id);
+        // トランザクション開始
+        DB::beginTransaction();
+        try {
+            // ペット情報削除処理
+            TPet::where('customer_id', $id)->delete();
+            // ご家族情報削除処理
+            TFamily::where('customer_id', $id)->delete();
+            // 顧客情報削除処理
+            TCustomer::destroy($id);
+
+            //コミット
+            DB::commit();
+        }
+        catch (\Exception $e) {
+            Log::error($e->getMessage());
+
+            //ロールバック
+            DB::rollBack();
+            throw new \Exception("顧客情報の削除に失敗しました");
+        }
 
         return;
     }
@@ -546,6 +905,7 @@ class TCustomer extends ModelBase
      *
      * @param $query
      * @param Request $param 検索パラメータ
+     * @throws Exception
      */
     public static function set_where(&$query, Request $param)
     {
@@ -578,8 +938,6 @@ class TCustomer extends ModelBase
         // 不備情報のみ
         if ($param->input('is_deficiency') == 1) {
             $query = $query->where('is_deficiency', 1);
-        } else {
-            $query = $query->where('is_deficiency', 0);
         }
         // 郵便番号
         if ($param->filled('post_no')) {
@@ -601,11 +959,23 @@ class TCustomer extends ModelBase
         }
         // 顧客ランク
         if ($param->filled('rank')) {
-            $query = $query->where('rank', $param->input('rank'));
+            if ($param->input('rank_filter') == '2') {
+                $query = $query->where('rank', '>=', $param->input('rank'));
+            } else if ($param->input('rank_filter') == '3') {
+                $query = $query->where('rank', '<=', $param->input('rank'));
+            } else {
+                $query = $query->where('rank', $param->input('rank'));
+            }
         }
         // 顧客見込みランク
         if ($param->filled('estimated_rank')) {
-            $query = $query->where('estimated_rank', $param->input('estimated_rank'));
+            if ($param->input('estimated_rank_filter') == '2') {
+                $query = $query->where('estimated_rank', '>=', $param->input('estimated_rank'));
+            } else if ($param->input('estimated_rank_filter') == '3') {
+                $query = $query->where('estimated_rank', '<=', $param->input('estimated_rank'));
+            } else {
+                $query = $query->where('estimated_rank', $param->input('estimated_rank'));
+            }
         }
         // エリア
         if ($param->filled('area')) {
@@ -621,7 +991,23 @@ class TCustomer extends ModelBase
         }
         // 築年数
         if ($param->filled('building_age')) {
-            $query = $query->where('building_age', str_replace('-', '', $param->input('building_age')));
+            $arr_building_age = explode("-", $param->input('building_age'));
+            $now    = Carbon::now();
+            $target = Carbon::create($arr_building_age[0], $arr_building_age[1]);
+            $years = $target->diffInYears($now);
+
+            // 築年数フィルタ
+            if ($param->filled('building_age_filter')) {
+                if ($param->input('building_age_filter') == 1) {
+                    $query = $query->where('building_age', str_replace('-', '', $years)); // のみ
+                } else if ($param->input('building_age_filter') == 2) {
+                    $query = $query->where('building_age', '>=', str_replace('-', '', $years)); // 以上
+                } else if ($param->input('building_age_filter') == 3) {
+                    $query = $query->where('building_age', '<=', str_replace('-', '', $years)); // 以下
+                }
+            } else {
+                $query = $query->where('building_age', str_replace('-', '', $years));
+            }
         }
         // 完工時期（開始年）
         if ($param->filled('completion_start_year')) {
@@ -695,6 +1081,59 @@ class TCustomer extends ModelBase
                 ->where('lng', '<', floatval($param->input('north_lng')))
                 ->where('lat', '>', floatval($param->input('south_lat')))
                 ->where('lng', '>', floatval($param->input('south_lng')));
+        }
+
+        // CSV出力管理顧客情報取得用
+        // 簡易検索
+        // 顧客分類
+        if ($param->filled('customer_classification')) {
+            if ($param->input('customer_classification') != 1) {
+                $query = $query->where('ob_flag', $param->input('customer_classification'));
+            }
+        }
+
+        // 詳細検索
+        // メールアドレス
+        if ($param->filled('mail_address')) {
+            $query = $query->where(function ($q) use ($param) {
+                $q->orWhere('mail_address', 'like', '%' . $param->input('mail_address') . '%') // メールアドレス
+                ->orWhere('mail_address2', 'like', '%' . $param->input('mail_address2') . '%') // メールアドレス2
+                ->orWhere('mail_address3', 'like', '%' . $param->input('mail_address3') . '%'); // メールアドレス3
+            });
+        }
+
+        // CSV出力管理結婚記念日リスト取得用
+        // 結婚記念日開始～終了
+        if (($param->filled('wedding_anniversary_start_year') && $param->filled('wedding_anniversary_start_month'))
+            && ($param->filled('wedding_anniversary_end_year') && $param->filled('wedding_anniversary_end_month'))) {
+            $query = $query->where(function ($q) use ($param) {
+                // 開始月0埋め
+                $wedding_anniversary_start_month = strlen($param->input('wedding_anniversary_start_month')) == 1
+                    ? printf('%01d', $param->input('wedding_anniversary_start_month')) : $param->input('wedding_anniversary_start_month');
+                // 終了月0埋め
+                $wedding_anniversary_end_month = strlen($param->input('wedding_anniversary_end_month')) == 1
+                    ? printf('%01d', $param->input('wedding_anniversary_end_month')) : $param->input('wedding_anniversary_end_month');
+
+                // 結婚記念日_開始、終了の期間
+                $q->where('wedding_anniversary', '>=', new \DateTime($param->input('wedding_anniversary_start_year') . '/' . $wedding_anniversary_start_month))
+                    ->where('wedding_anniversary', '<=', new \DateTime($param->input('wedding_anniversary_end_year') . '/' . $wedding_anniversary_end_month));
+            });
+        } else if (($param->filled('wedding_anniversary_start_year') && $param->filled('wedding_anniversary_start_month'))
+            && (is_null($param->input('wedding_anniversary_end_year')) || is_null($param->input('wedding_anniversary_end_month')))) {
+            // 開始月0埋め
+            $wedding_anniversary_start_month = strlen($param->input('wedding_anniversary_start_month')) == 1
+                ? printf('%01d', $param->input('wedding_anniversary_start_month')) : $param->input('wedding_anniversary_start_month');
+
+            // 結婚記念日_開始以降
+            $query = $query->where('wedding_anniversary', '>=', new \DateTime($param->input('wedding_anniversary_start_year') . '/' . $wedding_anniversary_start_month));
+        } else if ((is_null($param->input('wedding_anniversary_start_year')) || is_null($param->input('wedding_anniversary_start_month')))
+            && ($param->filled('wedding_anniversary_end_year') && $param->filled('wedding_anniversary_end_month'))) {
+            // 終了月0埋め
+            $wedding_anniversary_end_month = strlen($param->input('wedding_anniversary_end_month')) == 1
+                ? printf('%01d', $param->input('wedding_anniversary_end_month')) : $param->input('wedding_anniversary_end_month');
+
+            // 結婚記念日_終了以前
+            $query = $query->where('wedding_anniversary', '<=', new \DateTime($param->input('wedding_anniversary_end_year') . '/' . $wedding_anniversary_end_month));
         }
 
         return;
@@ -804,6 +1243,120 @@ class TCustomer extends ModelBase
                 'field_tour_party' => $arr['field_tour_party'], // 現場見学会
                 'lat' => $arr['lat'], // 緯度
                 'lng' => $arr['lng'], // 経度
+            ];
+            $results->push($data);
+        }
+
+        return $results;
+    }
+
+    /**
+     * DB取得結果整形（CSV出力管理顧客情報一覧取得用）<br>
+     * レスポンスの形に合わせ整形し、コレクションで返却
+     *
+     * @param $collection
+     * @param null $param
+     * @return Collection
+     */
+    private static function get_format_column_csv_customer($collection, $param = null): Collection
+    {
+        // 顧客ランクマスタ情報
+        $ranks = MCustomerRankKoji::search_customer_rank_list(new Request());
+
+        $results = new Collection();
+        foreach ($collection as $item) {
+
+            $arr = $item->toArray();
+            // 顧客ランク名称取得
+            $rank_name = '';
+            $rank_order = 999;
+            if (($ranks->count() > 0) && ($arr['rank'] > 0)) {
+                $rank_name = $ranks[$arr['rank'] - 1]['name']; // 顧客ランク名称
+                $rank_order = $ranks[$arr['rank'] - 1]['order']; // 顧客ランク順位
+            }
+
+            // 顧客ランクのフィルタ処理
+            if (self::filter_rank($param->filled('rank'), $param->filled('rank_filter'), $rank_order)) {
+                // 顧客ランク順位がフィルタされたらレスポンスに設定しない
+                continue;
+            }
+
+            $data = [
+                'customer_id' => $arr['id'], // 顧客ID
+                'customer_name' => $arr['name'], // 顧客名称
+                'tel_no' => $arr['tel_no'], // 電話番号
+                'prefecture' => $arr['prefecture'], // 都道府県
+                'address' => $arr['city'] . $arr['address'] . $arr['building_name'], // 住所
+                'ob' => $arr['ob_flag'] == ModelBase::OB ? ModelBase::OB_CUSTOMER[ModelBase::OB] : ModelBase::OB_CUSTOMER[ModelBase::NOT_OB], // OB客（OBの場合「〇」、見込みは空欄）
+                'rank' => $rank_name, // 顧客ランク
+                'last_completion_date' => CommonUtility::is_exist_variable_array($arr['project']) ? $arr['project']['completion_date'] : '', // 最終完工日
+                'total_work_price' => $arr['total_work_price_max'], // 総工事金額
+                'work_times' => $arr['work_times_max'], // 工事回数
+                'construction_status' => CommonUtility::is_exist_variable_array($arr['project']) ? $arr['project']['construction_status'] : '', // 状況
+                'sales_contact' => CommonUtility::is_exist_variable_array($arr['employee']) ? $arr['employee']['name'] : '', // 営業担当
+            ];
+            $results->push($data);
+        }
+
+        return $results;
+    }
+
+    /**
+     * DB取得結果整形（CSV出力管理生年月日リスト一覧取得用）<br>
+     * レスポンスの形に合わせ整形し、コレクションで返却
+     *
+     * @param $collection
+     * @return Collection
+     */
+    private static function get_format_column_csv_birthday($collection): Collection
+    {
+        $results = new Collection();
+        foreach ($collection as $item) {
+
+            $arr = $item->toArray();
+
+            $data = [
+                'customer_id' => $arr['id'], // 顧客ID
+                'customer_name' => $arr['name'], // 顧客名称
+                'family_name' => CommonUtility::is_exist_variable_array($arr['family']) ? $arr['family']['name'] : '', // 家族お名前
+                'birth_date' => CommonUtility::is_exist_variable_array($arr['family']) ? $arr['family']['birth_date'] : '', // 生年月日
+                'relationship' => CommonUtility::is_exist_variable_array($arr['family']) ? $arr['family']['relationship'] : '', // 続柄
+                'mobile_phone' => CommonUtility::is_exist_variable_array($arr['family']) ? $arr['family']['mobile_phone'] : '', // 携帯番号
+                'post_no' => $arr['post_no'], // 郵便番号
+                'prefecture' => $arr['prefecture'], // 都道府県
+                'address' => $arr['city'] . $arr['address'] . $arr['building_name'], // 住所
+                'tel_no' => $arr['tel_no'], // 顧客電話番号
+                'sales_contact' => CommonUtility::is_exist_variable_array($arr['employee']) ? $arr['employee']['name'] : '', // 営業担当
+            ];
+            $results->push($data);
+        }
+
+        return $results;
+    }
+
+    /**
+     * DB取得結果整形（CSV出力管理結婚記念日リスト一覧取得用）<br>
+     * レスポンスの形に合わせ整形し、コレクションで返却
+     *
+     * @param $collection
+     * @return Collection
+     */
+    private static function get_format_column_csv_wedding($collection): Collection
+    {
+        $results = new Collection();
+        foreach ($collection as $item) {
+
+            $arr = $item->toArray();
+
+            $data = [
+                'customer_id' => $arr['id'], // 顧客ID
+                'customer_name' => $arr['name'], // 顧客名称
+                'wedding_anniversary' => $arr['wedding_anniversary'], // 結婚記念日
+                'post_no' => $arr['post_no'], // 郵便番号
+                'prefecture' => $arr['prefecture'], // 都道府県
+                'address' => $arr['city'] . $arr['address'] . $arr['building_name'], // 住所
+                'tel_no' => $arr['tel_no'], // 顧客電話番号
+                'sales_contact' => CommonUtility::is_exist_variable_array($arr['employee']) ? $arr['employee']['name'] : '', // 営業担当
             ];
             $results->push($data);
         }
@@ -950,7 +1503,7 @@ class TCustomer extends ModelBase
     }
 
 
-    public static function csv_upsert($request){
+    public static function csv_upsert($request, $is_data_migration = false){
 
         // アップロードファイルのファイルパスを取得
         $file_path = $request->file('filedata')->path();
@@ -972,7 +1525,9 @@ class TCustomer extends ModelBase
             // 最終行をスキップ
             if ($line === null) continue;
 
-            $line = mb_convert_encoding($line, 'UTF-8', 'SJIS-win');
+
+//            $line = mb_convert_encoding($line, 'UTF-8', 'SJIS-win');
+            $line = mb_convert_encoding($line, 'UTF-8');//本番環境移行用
             // ヘッダーを取得
             if (empty($header)) {
 
@@ -980,20 +1535,105 @@ class TCustomer extends ModelBase
                 continue;
             }
 
-//            行にnullがあるかチェック
-            $current_col = 0;
-                foreach($line as $key => $val){
-                    if($val == "") {
-                          $error[] = sprintf("%d行目、%d列が空です",$current_row,$current_col);
+//            データ移行か？
+            if($is_data_migration){
+//                self::data_migration();
+                $items[$current_row]['id'] = $line[0];
+                $items[$current_row]['sales_contact'] = static::get_employee_codes()[$line[22]];// employee_cd コードから社員 IDを挿入
+                $items[$current_row]['name'] = $line[1];
+                $items[$current_row]['keisho'] = $line[2];
+                $items[$current_row]['furigana'] = $line[4];
+                $items[$current_row]['tel_no'] = $line[5];
+                $items[$current_row]['tel_no2'] = $line[6];
+                $items[$current_row]['tel_no3'] = $line[7];
+                $items[$current_row]['is_deficiency'] = 0; //default 0
+                $items[$current_row]['fax_no'] = $line[8];
+                $items[$current_row]['mail_address'] = $line[17];
+                $items[$current_row]['mail_address2'] = $line[18];
+                $items[$current_row]['mail_address3'] = $line[19];
+                $items[$current_row]['post_no'] = $line[10];
+                $items[$current_row]['prefecture'] = $line[13];
+                $items[$current_row]['city'] = $line[14];
+                $items[$current_row]['address'] = $line[15];
+                $items[$current_row]['building_name'] = $line[16];
+                $items[$current_row]['line_id'] = null;
+                $items[$current_row]['facebook_id'] = null;
+                $items[$current_row]['twitter_id'] = null;
+                $items[$current_row]['instagram_id'] = null;
+                $items[$current_row]['rank'] = intval($line[27])+1;
+                $items[$current_row]['rank_filter'] = null;
+                $items[$current_row]['estimated_rank'] = intval($line[44])+1;
+                $items[$current_row]['estimated_rank_filter'] = null;
+                $items[$current_row]['source_id'] = intval($line[46])+1; //未指定分＋
+                $items[$current_row]['area_id'] = intval($line[20])+1; //未指定分＋
+                $items[$current_row]['building_category_id'] = intval($line[23])+1; //未指定分＋
+                $items[$current_row]['madori_id'] = intval($line[24])+1; //未指定分＋
+                $items[$current_row]['building_age'] = intval($line[26]);
+                $items[$current_row]['completion_start_year'] = null;
+                $items[$current_row]['completion_start_month'] = null;
+                $items[$current_row]['completion_end_year'] = null;
+                $items[$current_row]['completion_end_month'] = null;
+                $items[$current_row]['last_completion_start_year'] = null;
+                $items[$current_row]['last_completion_start_month'] = null;
+                $items[$current_row]['last_completion_end_year'] = null;
+                $items[$current_row]['last_completion_end_month'] = null;
+                $items[$current_row]['total_work_price_min'] = null;
+                $items[$current_row]['total_work_price_max'] = null;
+                $items[$current_row]['work_times_min'] = null;
+                $items[$current_row]['work_times_max'] = null;
+                $items[$current_row]['tag_list'] = null;
+
+                $items[$current_row]['part_list'] = self::create_list($line,47,66);
+                $items[$current_row]['expected_part_list'] = self::create_list($line,89,108);
+                $items[$current_row]['remarks'] = $line[28];
+                $items[$current_row]['memo1'] = $line[67];
+                $items[$current_row]['memo2'] = $line[68];
+                $str = null;
+                //マイカーの始まりと終わりのカラム
+                $i = 0;
+                foreach(range(77,118) as $val){
+                    if(!($val >= 87 && $val <= 108)){
+                        $i++;
+                        $str .= (strval(intval($line[$val]) *$i))." ";
                     }
-                    $current_col++;
                 }
-            // csvヘッダーをキーにして値を格納
-            $items[$current_row] = array_combine($header, $line);
-            $items[$current_row]['prefecture'] = array_search($items[$current_row]['prefecture'],ModelBase::PREFECTURE);
-            $items[$current_row]['created_at'] = Carbon::now();
-            $items[$current_row]['updated_at'] = Carbon::now();
-            $items[$current_row]['last_updated_by'] = "山田孝之";
+                $items[$current_row]['my_car_type'] = $str;
+                $items[$current_row]['my_car_type_other'] = $line[87];
+                $items[$current_row]['introducer'] = $line[69];
+                $items[$current_row]['wedding_anniversary'] = null;
+                $items[$current_row]['friend_meeting'] = null;
+                $items[$current_row]['reform_album'] = null;
+                $items[$current_row]['case_permit'] = null;
+                $items[$current_row]['field_tour_party'] = null;
+                $items[$current_row]['lat'] = null;
+                $items[$current_row]['lng'] = null;
+                $items[$current_row]['ob_flag'] = $line[45];
+                $items[$current_row]['is_editing'] = 0; //default 0
+                $items[$current_row]['created_at'] = $line[29];
+                $items[$current_row]['updated_at'] = $line[29];
+                $items[$current_row]['last_updated_by'] = $line[30];
+
+                $employee = MEmployee::findOrFail($items[$current_row]['sales_contact'] ); //社員マスタから所属の店舗取得
+//                dd($items[$current_row]['sales_contact']);
+                $items[$current_row]['sales_shop'] =  $employee->store_id;
+            }else{
+
+    //            行にnullがあるかチェック
+                $current_col = 0;
+                    foreach($line as $key => $val){
+                        if($val == "") {
+                              $error[] = sprintf("%d行目、%d列が空です",$current_row,$current_col);
+                        }
+                        $current_col++;
+                    }
+
+                // csvヘッダーをキーにして値を格納
+                $items[$current_row] = array_combine($header, $line);
+                $items[$current_row]['prefecture'] = array_search($items[$current_row]['prefecture'],ModelBase::PREFECTURE);
+                $items[$current_row]['created_at'] = Carbon::now();
+                $items[$current_row]['updated_at'] = Carbon::now();
+                $items[$current_row]['last_updated_by'] = "山田孝之";
+            }
 
         }
         if($error){
@@ -1004,56 +1644,71 @@ class TCustomer extends ModelBase
         }
     }
 
-
-//    public static function upsert_download_csv()
-//    {
-//        // データの作成
-//        $users = [
-//            ['name' => '太郎', 'age' => 24],
-//            ['name' => '花子', 'age' => 21]
-//        ];
-//        // カラムの作成
-//        $head = ['名前', '年齢'];
-//
-//        // 書き込み用ファイルを開く
-//        $f = fopen('test.csv', 'w');
-//        if ($f) {
-//            // カラムの書き込み
-//            mb_convert_variables('SJIS', 'UTF-8', $head);
-//            fputcsv($f, $head);
-//            // データの書き込み
-//            foreach ($users as $user) {
-//                mb_convert_variables('SJIS', 'UTF-8', $user);
-//                fputcsv($f, $user);
-//            }
-//        }
-//        // ファイルを閉じる
-//        fclose($f);
-//
-//        // HTTPヘッダ
-//        header("Content-Type: application/octet-stream");
-//        header('Content-Length: ' . filesize('test.csv'));
-//        header('Content-Disposition: attachment; filename=test.csv');
-//        readfile('test.csv');
-//
-//    }
-
-//    public function _csvRow($row){
-//        $data = [];
-//        $columns = TCustomer::get_columns();
-////        必要なカラムをdataに詰める
-//        foreach($columns as $key => $column){
-//            $data[] = $row->{$key};
-//        }
-//        return $data;
-//    }
-//
-//    public function _csvHeader(){
-//        $columns = TCustomer::get_columns();
-//
-////        必要なカラムをdataに詰める
-//        $data = array_values($columns);
-//
-//        return $data;
-//    }
+public static function create_list($line,$start,$end){
+    $str = null;
+    $i = 0;
+    foreach(range($start,$end) as $val){
+        $i++;
+        $str .= (strval(intval($line[$val]) *$i))." ";
+    }
+    return $str; //連結した文字列+スペース返却
 }
+
+    /**
+     * 顧客フリーワード検索
+     *
+     * @param Request $param 検索パラメータ
+     * @return Collection 取得データ
+     * @throws Exception
+     */
+    public static function search_list_freeword(Request $param): Collection
+    {
+        $query = self::_search_list($param);
+
+        // 検索条件（or）
+        if ($param->filled('keyword') || !is_null($param->input('keyword'))) {
+            self::set_orwhere($query, $param->input('keyword'));
+        }
+
+        // ソート条件（order by）
+        self::_set_order_by($query, $param->input('sort_by', 3), $param->input('highlow', 0));
+        if ($param->filled('limit')) {
+            // オフセット条件（offset）
+            $query->skip(($param->input('offset', 0) > 0) ? ($param->input('offset') * $param->input('limit')) : 0);
+            // リミット条件（limit）
+            $query->take($param->input('limit'));
+        }
+
+        $result = $query->get();
+
+        if ($result->count() == 0) {
+            return $result;
+        }
+
+        // 取得結果整形
+        return self::get_format_column($result, $param);
+    }
+
+    public static function set_orwhere(&$query, String $keyword)
+    {
+        $query->where(function($_query) use ($keyword) {
+            // 顧客名
+            $_query->orWhere('name', 'like', '%' . $keyword . '%');
+            // 顧客TEL
+            // -を除いた数字で検索する
+            $_query->orWhere(function ($q) use ($keyword) {
+                $q->whereRaw('replace(tel_no, "-", "") like ?', ['tel_no' => '%' . str_replace('-', '', $keyword) . '%']) // 電話番号
+                    ->orWhereRaw('replace(tel_no2, "-", "") like ?', ['tel_no2' => '%' . str_replace('-', '', $keyword) . '%']) // 電話番号2
+                    ->orWhereRaw('replace(tel_no3, "-", "") like ?', ['tel_no3' => '%' . str_replace('-', '', $keyword) . '%']); // 電話番号3
+            });
+            // 顧客住所
+            $_query->orWhere(function ($q) use ($keyword) {
+                $q->orWhere('city', 'like', '%' . $keyword . '%') // 市区町村
+                    ->orWhere('address', 'like', '%' . $keyword . '%') // 地名、番地
+                    ->orWhere('building_name', 'like', '%' . $keyword . '%'); // 建物名等
+            });
+        });
+        return;
+    }
+}
+

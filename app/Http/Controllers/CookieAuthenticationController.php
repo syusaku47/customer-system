@@ -1,8 +1,9 @@
-<?php declare(strict_types=1);
+<?php
 
 namespace App\Http\Controllers;
 
 use Exception;
+use App\Http\Controllers\Controller;
 use Illuminate\Contracts\Auth\Factory as Auth;
 use Illuminate\Contracts\Auth\StatefulGuard;
 use Illuminate\Http\JsonResponse;
@@ -15,7 +16,7 @@ final class CookieAuthenticationController extends Controller
      * @param Auth $auth
      */
     public function __construct(
-         Auth $auth
+        private Auth $auth,
     ) {
     }
 
@@ -34,10 +35,15 @@ final class CookieAuthenticationController extends Controller
         if ($this->getGuard()->attempt($credentials)) {
             $request->session()->regenerate();
 
-            return new JsonResponse(['message' => 'ログインしました']);
+            //return new JsonResponse(['message' => 'ログインしました']);
+            return $this->jsonResponse($request->path());
         }
 
-        throw new Exception('ログインに失敗しました。再度お試しください');
+        $this->_status = 0;
+        $this->_status_code = 401;
+        $this->_messages[] = "メールアドレスまたはパスワードが間違っています";
+        return $this->jsonResponse($request->path());
+        //throw new Exception('ログインに失敗しました。再度お試しください');
     }
 
     /**
@@ -50,7 +56,8 @@ final class CookieAuthenticationController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return new JsonResponse(['message' => 'ログアウトしました']);
+        //return new JsonResponse(['message' => 'ログアウトしました']);
+        return $this->jsonResponse($request->path());
     }
 
     /**
@@ -59,5 +66,13 @@ final class CookieAuthenticationController extends Controller
     private function getGuard(): StatefulGuard
     {
         return $this->auth->guard(config('auth.defaults.guard'));
+    }
+
+    public function unauthenticated(Request $request): JsonResponse
+    {
+        $this->_status = 0;
+        $this->_status_code = 401;
+        $this->_messages[] = "認証に失敗しました";
+        return $this->jsonResponse($request->path);
     }
 }

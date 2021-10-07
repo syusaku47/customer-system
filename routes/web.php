@@ -1,4 +1,4 @@
-<?php declare(strict_types=1);
+<?php
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CookieAuthenticationController;
@@ -21,8 +21,10 @@ use App\Http\Controllers\CookieAuthenticationController;
 
 
 
-Route::post('/login', [CookieAuthenticationController::class, 'login']);
-Route::post('/logout', [CookieAuthenticationController::class, 'logout']);
+Route::post('api/auth/login', [CookieAuthenticationController::class, 'login']);
+Route::post('api/auth/logout', [CookieAuthenticationController::class, 'logout']);
+Route::get('api/auth/unauthenticated', [CookieAuthenticationController::class, 'unauthenticated'])->name('unauthenticated');
+
 
 Route::get('{path?}', 'Controller@action')->where('path', '.*');
 

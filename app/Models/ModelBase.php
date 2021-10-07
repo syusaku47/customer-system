@@ -18,7 +18,7 @@ class ModelBase extends Model
      *
      * @var string[]
      */
-    protected const SORT_KIND = [
+    public const SORT_KIND = [
         0 => 'ASC', // 昇順
         1 => 'DESC', // 降順
     ];
@@ -147,4 +147,45 @@ class ModelBase extends Model
         4 => '材公共',
         5 => 'その他',
     ];
+
+    protected const OB = 1;
+    protected const NOT_OB = 2;
+    /**
+     * OB客
+     *
+     * @var string[]
+     */
+    public const OB_CUSTOMER = [
+        self::OB => '○',
+        self::NOT_OB => '',
+    ];
+
+    /**
+     * 工事状況
+     *
+     * @var string[]
+     */
+    public const CONSTRUCTION_STATUS = [
+        0 => '案件無',
+        1 => '案件化',
+        2 => '見積中',
+        3 => '工事中',
+        4 => '完工',
+        5 => '未入金',
+        6 => '完了',
+        7 => '失注',
+        8 => 'ｷｬﾝｾﾙ',
+    ];
+
+    /**
+     * 受注フラグ取得
+     *
+     * @param $contract_date
+     * @param $cancel_date
+     * @return bool true:受注済 false:未受注
+     */
+    public static function is_order($contract_date, $cancel_date): bool
+    {
+        return (is_null($contract_date) && is_null($cancel_date));
+    }
 }

@@ -21,7 +21,8 @@ class MEmployeesTableSeeder extends Seeder
         for($i = 0; $i <= count($names) - 1; $i++) {
             DB::table('m_employees')->insert([
                 'employee_cd' => '0002',
-                'password' => 'ma123456'.$i,
+//                'password' => 'ma123456'.$i,
+                'password' => Hash::make('ma123456'.$i),
                 'store_id' => rand(1, 3),
                 'name' => $names[$i],
                 'short_name' => $names[$i],

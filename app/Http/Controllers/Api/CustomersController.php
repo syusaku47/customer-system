@@ -30,7 +30,7 @@ class CustomersController extends Controller
             // パラメータから検索
             $results = TCustomer::search_list($request);
 
-            $count = $results->count();
+            $count = TCustomer::search_list_count($request)->count();
             if ($count == 0) {
                 // 総件数
                 $this->_body['hit_count'] = 0;
@@ -93,10 +93,15 @@ class CustomersController extends Controller
         try {
             // パラメータから登録
             $result = TCustomer::upsert($request);
-            if ($result === 'err_tel_no') {
+            if ($result["code"] === 'err_tel_no') {
                 $this->_status = 0;
                 $this->_status_code = 400;
-                $this->_messages[] = '入力された電話番号は既に登録済みです\r\n今一度お確かめ下さい';
+                array_push($this->_messages, '入力された電話番号は既に登録済みです', '今一度お確かめ下さい');
+            }
+            if ($result["code"] === 'err_geocoding') {
+                $this->_status = 0;
+                $this->_status_code = 400;
+                $this->_messages[] = $result["name"].$result["keisho"].'で既に登録済みのジオコードです。';
             }
         } catch (\Exception $e) {
             $this->_status = 0;
@@ -120,11 +125,21 @@ class CustomersController extends Controller
          try {
              // パラメータから更新
              $result = TCustomer::upsert($request, $id);
-             if ($result === '404') {
+             if ($result["code"] === '404') {
                  $this->_status = 0;
                  $this->_status_code = 404;
                  $this->_messages[] = '更新対象のデータが存在しません.';
              }
+             if ($result["code"] === 'err_geocoding') {
+                $this->_status = 0;
+                $this->_status_code = 400;
+                $this->_messages[] = $result["name"].$result["keisho"].'で既に登録済みのジオコードです。';
+             }
+            if ($result["code"] === 'err_tel_no') {
+                $this->_status = 0;
+                $this->_status_code = 400;
+                array_push($this->_messages, '入力された電話番号は既に登録済みです', '今一度お確かめ下さい');
+            }
          } catch (\Exception $e) {
              $this->_status = 0;
              $this->_status_code = 500;
@@ -219,4 +234,26 @@ class CustomersController extends Controller
         return $this->jsonResponse($request->path());
     }
 
+
+    public function import_csv_prod(Request $request)
+    {
+        try {
+            if(TCustomer::csv_upsert($request,true)){
+                $this->_status = 0;
+                $this->_status_code = 500;
+                $this->_body['data'] = ["空です"];
+            }else{
+                $this->_body['data'] = [];
+            }
+
+        }catch(\Exception $e) {
+            $this->_status = 0;
+            $this->_status_code = 500;
+            $this->_messages[] = $e->getMessage();
+            $this->error($e);
+        }
+
+        return $this->jsonResponse($request->path());
+
+    }
 }

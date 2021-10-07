@@ -52,6 +52,7 @@ class MCategory extends ModelBase
     protected const SORT_BY_COLUMN = [
         0 => 'name', // 名称
         1 => 'is_valid', // 有効フラグ
+        2 => 'id', // ID
     ];
 
     /**
@@ -72,7 +73,7 @@ class MCategory extends ModelBase
         // 検索条件（where）
         self::set_where($query, $param);
         // ソート条件（order by）
-        self::_set_order_by($query, $param->input('sort_by', 0), $param->input('highlow', 0));
+        self::_set_order_by($query, $param->input('sort_by', 2), $param->input('highlow', 0));
 
         $result = $query->get();
         if ($result->count() == 0) {

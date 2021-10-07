@@ -43,6 +43,7 @@ class TMaintenance extends ModelBase
         'lat',
         'lng',
         'last_updated_by',
+        'auto_flag',
     ];
 
     /**
@@ -125,10 +126,10 @@ class TMaintenance extends ModelBase
      * メンテナンス情報一覧検索
      *
      * @param Request $param 検索パラメータ
-     * @return mixed 取得データ
+     * @return mixed $query 取得クエリー
      * @throws Exception
      */
-    public static function search_list(Request $param)
+    private static function _search_list(Request $param)
     {
         // 取得項目
         $query = TMaintenance::select(
@@ -178,6 +179,26 @@ class TMaintenance extends ModelBase
         self::set_where_customer_join($query, $param); // 顧客
         self::set_where_project_join($query, $param); // 案件
         self::set_where_quote_join($query, $param); // 見積
+
+        return $query;
+    }
+
+    /**
+     * メンテナンス情報一覧検索
+     *
+     * @param Request $param 検索パラメータ
+     * @return Collection 取得データ
+     * @throws Exception
+     */
+    public static function search_list(Request $param): Collection
+    {
+        $query = self::_search_list($param);
+
+        $result_all = $query->get();
+        if ($result_all->count() == 0) {
+            return $result_all;
+        }
+
         // ソート条件（order by）
         if ($param->filled('sort_by')) {
             self::_set_order_by($query, $param->input('sort_by', 9), $param->input('highlow', 0), 1);
@@ -186,7 +207,7 @@ class TMaintenance extends ModelBase
         }
         if ($param->filled('limit')) {
             // オフセット条件（offset）
-            $query->skip($param->input('offset', 0));
+            $query->skip(($param->input('offset', 0) > 0) ? ($param->input('offset') * $param->input('limit')) : 0);
             // リミット条件（limit）
             $query->take($param->input('limit'));
         }
@@ -198,6 +219,20 @@ class TMaintenance extends ModelBase
 
         // 取得結果整形
         return self::get_format_column($result);
+    }
+
+    /**
+     * メンテナンス情報一覧検索（全件）
+     *
+     * @param Request $param 検索パラメータ
+     * @return mixed 取得データ
+     * @throws Exception
+     */
+    public static function search_list_count(Request $param)
+    {
+        $query = self::_search_list($param);
+
+        return $query->get();
     }
 
     /**
@@ -335,15 +370,19 @@ class TMaintenance extends ModelBase
         // 文字列検索
         if ($param->filled('word')) {
             $query = $query->where(function ($q) use ($param) {
-                $q->where('tm.title', 'like', '%' . $param->input('title') . '%') // タイトル
-                ->orWhere('tm.detail', 'like', '%' . $param->input('detail') . '%') // 詳細内容
-                ->orWhere('tm.supported_content', 'like', '%' . $param->input('supported_content') . '%'); // 対応内容
+                $q->where('tm.title', 'like', '%' . $param->input('word') . '%') // タイトル
+                ->orWhere('tm.detail', 'like', '%' . $param->input('word') . '%') // 詳細内容
+                ->orWhere('tm.supported_content', 'like', '%' . $param->input('word') . '%'); // 対応内容
             });
+        }
+        //タイトル検索
+        if ($param->filled('title')) {
+            $query = $query->where('tm.title', 'like', '%' . $param->input('title') . '%');
         }
         // キーワード検索
         if ($param->filled('sp_word')) {
             $query = $query->where(function ($q) use ($param) {
-                $q->orWhere('tm.title', 'like', '%' . $param->input('sp_word') . '%'); // メンテナンス
+                $q->where('tm.title', 'like', '%' . $param->input('sp_word') . '%'); // タイトル
             });
         }
         // メンテナンス日
@@ -354,16 +393,16 @@ class TMaintenance extends ModelBase
         // 顧客・案件詳細画面内タブでの絞込み用
         // 対応済みマーク
         if ($param->filled('is_fixed')) {
-            if ($param->input('is_fixed') == 1) {
+            if ($param->input('is_fixed') == true) {
                 $query = $query->where('tm.supported_kubun', 2); // 対応済
             } else {
                 $query = $query->where('tm.supported_kubun', 0); // 未対応
             }
         }
-        // メンテナンスタイトル
-        if ($param->filled('title')) {
-            $query = $query->where('tm.title', $param->input('title'));
-        }
+        //// メンテナンスタイトル
+        //if ($param->filled('title')) {
+        //    $query = $query->where('tm.title', $param->input('title'));
+        //}
         // 対応日
         if ($param->filled('supported_date')) {
             $query = $query->whereDate('tm.supported_date', $param->input('supported_date'));
@@ -660,5 +699,66 @@ class TMaintenance extends ModelBase
         $result[] = array_merge($data, $data2);
 
         return $result;
+    }
+
+    /**
+     * メンテナンス情報フリーワード検索
+     *
+     * @param Request $param 検索パラメータ
+     * @return Collection 取得データ
+     * @throws Exception
+     */
+    public static function search_list_freeword(Request $param): Collection
+    {
+        $query = self::_search_list($param);
+
+        // 検索条件（or）
+        if ($param->filled('keyword') || !is_null($param->input('keyword'))) {
+            self::set_orwhere($query, $param->input('keyword'));
+        }
+
+        // ソート条件（order by）
+        if ($param->filled('sort_by')) {
+            self::_set_order_by($query, $param->input('sort_by', 9), $param->input('highlow', 0), 1);
+        } else {
+            self::_set_order_by($query, $param->input('filter_by', 5), $param->input('highlow', 0), 2);
+        }
+        if ($param->filled('limit')) {
+            // オフセット条件（offset）
+            $query->skip(($param->input('offset', 0) > 0) ? ($param->input('offset') * $param->input('limit')) : 0);
+            // リミット条件（limit）
+            $query->take($param->input('limit'));
+        }
+
+        $result = $query->get();
+        if ($result->count() == 0) {
+            return $result;
+        }
+
+        // 取得結果整形
+        return self::get_format_column($result);
+    }
+
+    public static function set_orwhere(&$query, String $keyword)
+    {
+        $query->where(function($_query) use ($keyword) {
+            // 顧客名
+            $_query->orWhere('tc.name', 'like', '%' . $keyword . '%');
+            //タイトル検索
+            $_query->orWhere('title', 'like', '%' . $keyword . '%');
+            // -を除いた数字で検索する
+            $_query->orWhere(function ($q) use ($keyword) {
+                $q->whereRaw('replace(tc.tel_no, "-", "") like ?', ['tc.tel_no' => '%' . str_replace('-', '', $keyword) . '%']) // 電話番号
+                    ->orWhereRaw('replace(tc.tel_no2, "-", "") like ?', ['tc.tel_no2' => '%' . str_replace('-', '', $keyword) . '%']) // 電話番号2
+                    ->orWhereRaw('replace(tc.tel_no3, "-", "") like ?', ['tc.tel_no3' => '%' . str_replace('-', '', $keyword) . '%']); // 電話番号3
+            });
+            // 顧客住所
+            $_query->orWhere(function ($q) use ($keyword) {
+                $q->orWhere('tc.city', 'like', '%' . $keyword . '%') // 市区町村
+                    ->orWhere('tc.address', 'like', '%' . $keyword . '%') // 地名、番地
+                    ->orWhere('tc.building_name', 'like', '%' . $keyword . '%'); // 建物名等
+            });
+        });
+        return;
     }
 }

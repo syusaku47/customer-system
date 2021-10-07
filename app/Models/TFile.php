@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 /**
  * Class TFile<br>
@@ -100,10 +102,10 @@ class TFile extends ModelBase
      * ファイル情報一覧検索
      *
      * @param Request $param 検索パラメータ
-     * @return mixed 取得データ
+     * @return mixed $query 取得クエリー
      * @throws Exception
      */
-    public static function search_list(Request $param)
+    private static function _search_list(Request $param)
     {
         // 取得項目
         $query = TFile::select(
@@ -131,6 +133,26 @@ class TFile extends ModelBase
         self::set_where_join($query, $param); // ファイル
         self::set_where_customer_join($query, $param); // 顧客
         self::set_where_project_join($query, $param); // 案件
+
+        return $query;
+    }
+
+    /**
+     * ファイル情報一覧検索
+     *
+     * @param Request $param 検索パラメータ
+     * @return Collection 取得データ
+     * @throws Exception
+     */
+    public static function search_list(Request $param): Collection
+    {
+        $query = self::_search_list($param);
+
+        $result_all = $query->get();
+        if ($result_all->count() == 0) {
+            return $result_all;
+        }
+
         // ソート条件（order by）
         if ($param->filled('sort_by')) {
             self::_set_order_by($query, $param->input('sort_by', 0), $param->input('highlow', 0), 1);
@@ -139,7 +161,7 @@ class TFile extends ModelBase
         }
         if ($param->filled('limit')) {
             // オフセット条件（offset）
-            $query->skip($param->input('offset', 0));
+            $query->skip(($param->input('offset', 0) > 0) ? ($param->input('offset') * $param->input('limit')) : 0);
             // リミット条件（limit）
             $query->take($param->input('limit'));
         }
@@ -151,6 +173,20 @@ class TFile extends ModelBase
 
         // 取得結果整形
         return self::get_format_column($result);
+    }
+
+    /**
+     * ファイル情報一覧検索（全件）
+     *
+     * @param Request $param 検索パラメータ
+     * @return mixed 取得データ
+     * @throws Exception
+     */
+    public static function search_list_count(Request $param)
+    {
+        $query = self::_search_list($param);
+
+        return $query->get();
     }
 
     /**
@@ -224,38 +260,57 @@ class TFile extends ModelBase
             if ($param->hasFile('file')) {
                 $format =  strrpos($obj->file_name, '.') >= 0 ? substr($obj->file_name, strrpos($obj->file_name, '.')) : '';
                 // 登録済みのファイルを削除
-                $file_path = ModelBase::STORAGE_PATH[1] . $obj->association . $format;
-                Storage::delete($file_path);
+                $file_path = config('filesystems.disks.s3.directory') . "/" . $obj->association . $format;
+                Storage::disk('s3')->delete($file_path);
 
-                $file_name = str_random();
+                //$file_name = str_random();
+                $association = Str::uuid();
                 // ファイルをStorageに保存
-                Storage::putFileAs(ModelBase::STORAGE_PATH[1], $param->file('file')
-                    , $file_name . '.' . $param->file('file')->clientExtension());
+                Storage::disk('s3')->putFileAs(
+                    config('filesystems.disks.s3.directory'),
+                    $param->file('file'),
+                    $association . '.' . $param->file('file')->clientExtension(),
+                    'public'
+                );
                 // サイズ（KB換算）
                 $filesize = filesize($param->file('file')->getRealPath()) / 1024;
                 $arr['size'] = $filesize;
+                // ファイル名（拡張子を含む）
+                $file_name = $param->file('file')->getClientOriginalName();
                 // ファイル識別子
-                $arr['association'] = $file_name;
+                $arr['association'] = $association;
             }
 
             // 更新処理
             $obj->fill($arr)->save();
         } else {
             if ($param->hasFile('file')) {
-                $file_name = str_random();
-                // ファイルをStorageに保存
-                Storage::putFileAs(ModelBase::STORAGE_PATH[1], $param->file('file')
-                    , $file_name . '.' . $param->file('file')->clientExtension());
-                // サイズ（KB換算）
-                $filesize = filesize($param->file('file')->getRealPath()) / 1024;
-                $arr['size'] = $filesize;
-                // ファイル識別子
-                $arr['association'] = $file_name;
+                $arr_params = [];
+                foreach ($param->file('file') as $index=> $e) {
+                    //$file_name = str_random();
+                    $association = Str::uuid();
+                    // 画像をStorageに保存
+                    Storage::disk('s3')->putFileAs(
+                        config('filesystems.disks.s3.directory'),
+                        $e,
+                        $association . '.' . $e->clientExtension(),
+                        'public'
+                    );
+                    $filesize = filesize($e->getRealPath()) / 1024;
+                    $arr['size'] = $filesize;
+                    // ファイル名（拡張子を含む）
+                    $arr['file_name'] = $e->getClientOriginalName();
+                    // ファイル識別子
+                    $arr['association'] = $association;                    
+                    // 登録処理
+                    $customer = new TFile();
+                    $customer->fill($arr)->save();
+                }
+            } else {
+                // 登録処理
+                $customer = new TFile();
+                $customer->fill($arr)->save();
             }
-
-            // 登録処理
-            $customer = new TFile();
-            $customer->fill($arr)->save();
         }
 
         return 'ok';
@@ -272,8 +327,8 @@ class TFile extends ModelBase
         if (!is_null($obj)) {
             $format =  strrpos($obj->file_name, '.') >= 0 ? substr($obj->file_name, strrpos($obj->file_name, '.')) : '';
             // ファイル削除処理
-            $file_path = ModelBase::STORAGE_PATH[1] . $obj->association . $format;
-            Storage::delete($file_path);
+            $file_path = config('filesystems.disks.s3.directory') . "/" . $obj->association . $format;
+            Storage::disk('s3')->delete($file_path);
             // データ削除処理
             TFile::destroy($id);
         }
@@ -292,13 +347,15 @@ class TFile extends ModelBase
 
         if (!is_null($obj) && $obj->file_name && $obj->format && $obj->association) {
             $format = strrpos($obj->file_name, '.') >= 0 ? substr($obj->file_name, strrpos($obj->file_name, '.')) : '';
-            $filePath = ModelBase::STORAGE_PATH[1] . $obj->association . $format;
-            if (Storage::exists($filePath)) {
+            $filePath = config('filesystems.disks.s3.directory') . "/" . $obj->association . $format;
+            if (Storage::disk('s3')->exists($filePath)) {
                 // ファイルダウンロード
-                $mimeType = Storage::mimeType($filePath);
-                $headers = ['Content-Type' => $mimeType];
-
-                return Storage::download($filePath, $obj->file_name, $headers);
+                $mimeType = Storage::disk('s3')->mimeType($filePath);
+                $headers = [
+                    'Content-Type' => $mimeType,
+                    'Content-Disposition' => 'attachment; filename="' . $obj->file_name . '"'
+                ];
+                return \Response::make(Storage::disk('s3')->get($filePath), 200, $headers);
             }
         }
 
@@ -489,12 +546,12 @@ class TFile extends ModelBase
             $icon_thumbnail = null;
             if ($arr['tf_file_name'] && $arr['tf_format'] && $arr['tf_association']) {
                 $format = strrpos($arr['tf_file_name'], '.') >= 0 ? substr($arr['tf_file_name'], strrpos($arr['tf_file_name'], '.')) : '';
-                $filePath = ModelBase::STORAGE_PATH[1] . $arr['tf_association'] . $format;
-                if (Storage::exists($filePath)) {
-                    $mimeType = Storage::mimeType($filePath);
+                $filepath = config('filesystems.disks.s3.directory') . "/" . $arr['tf_association'] . $format;
+                if (Storage::disk('s3')->exists($filepath)) {
+                    $mimeType = Storage::disk('s3')->mimeType($filepath);
                     $headers = ['Content-Type' => $mimeType];
 
-                    $icon_thumbnail = base64_encode(Storage::download($filePath, $arr['tf_file_name'], $headers));
+                    $icon_thumbnail = base64_encode(Storage::disk('s3')->get($filepath));
                 }
             }
 
@@ -533,12 +590,13 @@ class TFile extends ModelBase
         $file = null;
         if ($obj->file_name && $obj->format && $obj->association) {
             $format = strrpos($obj->file_name, '.') >= 0 ? substr($obj->file_name, strrpos($obj->file_name, '.')) : '';
-            $filePath = ModelBase::STORAGE_PATH[1] . $obj->association . $format;
-            if (Storage::exists($filePath)) {
-                $mimeType = Storage::mimeType($filePath);
+            $filePath = config('filesystems.disks.s3.directory') . "/" . $obj->association . $format;
+            if (Storage::disk('s3')->exists($filePath)) {
+                $mimeType = Storage::disk('s3')->mimeType($filePath);
                 $headers = ['Content-Type' => $mimeType];
 
-                $file = base64_encode(Storage::download($filePath, $obj->file_name, $headers));
+                $file = base64_encode(Storage::disk('s3')->get($filePath));
+
             }
         }
 
@@ -557,5 +615,58 @@ class TFile extends ModelBase
         ];
 
         return $data;
+    }
+
+    /**
+     * ファイル情報フリーワード検索
+     *
+     * @param Request $param 検索パラメータ
+     * @return Collection 取得データ
+     * @throws Exception
+     */
+    public static function search_list_freeword(Request $param): Collection
+    {
+        $query = self::_search_list($param);
+
+        // 検索条件（or）
+        if ($param->filled('keyword') || !is_null($param->input('keyword'))) {
+            self::set_orwhere($query, $param->input('keyword'));
+        }
+
+        // ソート条件（order by）
+        if ($param->filled('sort_by')) {
+            self::_set_order_by($query, $param->input('sort_by', 0), $param->input('highlow', 0), 1);
+        } else {
+            self::_set_order_by($query, $param->input('filter_by', 0), $param->input('highlow', 0), 2);
+        }
+        if ($param->filled('limit')) {
+            // オフセット条件（offset）
+            $query->skip(($param->input('offset', 0) > 0) ? ($param->input('offset') * $param->input('limit')) : 0);
+            // リミット条件（limit）
+            $query->take($param->input('limit'));
+        }
+
+        $result = $query->get();
+        if ($result->count() == 0) {
+            return $result;
+        }
+
+        // 取得結果整形
+        return self::get_format_column($result);
+    }
+
+    public static function set_orwhere(&$query, String $keyword)
+    {
+        $query->where(function($_query) use ($keyword) {
+            // 顧客名
+            $_query->orWhere('tc.name', 'like', '%' . $keyword . '%');
+            // 案件名
+            $_query->orWhere('tp.name', 'like', '%' . $keyword . '%');
+            // ファイル名
+            $_query->orWhere('tf.file_name', 'like', '%' . $keyword . '%');
+            // アップロード日時
+            $_query->orWhereDate('tf.updated_at', $keyword);
+        });
+        return;
     }
 }

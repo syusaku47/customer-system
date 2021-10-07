@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
-use Illuminate\Foundation\Auth\User as Authenticatable;
+use App\Contracts\Auth\User as Authenticatable;
 
 /**
  * Class MEmployee<br>

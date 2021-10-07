@@ -86,6 +86,7 @@ return [
     'from' => [
         'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
         'name' => env('MAIL_FROM_NAME', 'Example'),
+        'password_reset' => env('FROM_PASSWORD_RESET'),
     ],
 
     /*
@@ -107,4 +108,8 @@ return [
         ],
     ],
 
+    'sendgrid' => [
+        'base_url' => env('SENDGRID_BASE_URL'),
+        'api_key' => env('SENDGRID_API_KEY'),
+    ],
 ];

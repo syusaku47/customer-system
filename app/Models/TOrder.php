@@ -66,6 +66,7 @@ class TOrder extends ModelBase
     {
         // 取得項目
         $result = TOrder::select(
+            'id',
             'project_id',
             'quote_id',
             'contract_money',
@@ -153,6 +154,7 @@ class TOrder extends ModelBase
     private static function get_format_column_one($obj): ?array
     {
         $data[] = [
+            'id' => $obj->id, // 受注ID
             'project_id' => $obj->project_id, // 案件ID
             'quote_id' => $obj->quote_id, // 見積ID
             'contract_money' => floatval($obj->contract_money), // 契約金

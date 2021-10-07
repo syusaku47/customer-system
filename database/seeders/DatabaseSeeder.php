@@ -50,5 +50,6 @@ class DatabaseSeeder extends Seeder
         $this->call(MFieldConfirmItemsTableSeeder::class);
         $this->call(MKojiConfirmItemsTableSeeder::class);
         $this->call(MSupportsTableSeeder::class);
+        $this->call(TCustomerRankLogsTableSeeder::class);
     }
 }

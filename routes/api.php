@@ -2,7 +2,6 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Models\MEmployee;
-use App\Http\Controllers\CookieAuthenticationController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -15,25 +14,25 @@ use App\Http\Controllers\CookieAuthenticationController;
 */
 
 Route::group(['middleware' => ['auth:sanctum']], function () {
-    Route::get('/me', MeController::class);
+    Route::get('auth/me', MeController::class);
 });
 
+//Route::prefix('api')->middleware(["middleware" => "api"])->group(function () {
+//
+//    // PDF生成
+    Route::post('pdf', [App\Http\Controllers\Api\PdfController::class, 'index'])->name('pdf.index');
+//
+//});
 
 
 
-Route::group(['middleware' => 'api', 'namespace' => 'Api'], function(){
-    Route::group(['middleware' => ['auth:sanctum']], function () {
+//Route::group(['middleware' => ['auth:sanctum']], function () {
+    Route::group(['middleware' => 'api', 'namespace' => 'Api'], function(){
         // 共通パスワード変更
         Route::group(['prefix' => 'common'], function() {
             Route::post("/chgpassword", 'ChangePasswordController@changePassword');
         });
-        // ログイン・ログアウト
-        Route::group(['prefix' => 'auth'], function() {
-            Route::post("/login", 'LoginController@login');
-            Route::get("/user", 'LoginController@get_user');
-            Route::get("/islogin", 'IsLoginController@isLogin');
-            Route::post("/logout", 'LogoutController@logout');
-        });
+
         // 顧客管理
         Route::group(['prefix' => 'customer'], function() {
             // 顧客情報
@@ -236,6 +235,16 @@ Route::group(['middleware' => 'api', 'namespace' => 'Api'], function(){
 
                 // CSVダウンロード
                 Route::get('template/download', 'CustomersController@download_templete_csv');
+
+
+
+                // CSVダウンロード
+                Route::get('template/download', 'CustomersController@download_templete_csv');
+
+    //            本番顧客データ移行用
+                Route::post('data/migration', 'CustomersController@import_csv_prod');
+
+
             });
         });
 
@@ -274,5 +283,37 @@ Route::group(['middleware' => 'api', 'namespace' => 'Api'], function(){
         // 見積情報
         // 取得・登録
         Route::apiResource('quote', 'QuotesController');
-    });
+
+        // CSV出力管理
+        Route::group(['prefix' => 'csv'], function () {
+            // 一覧取得
+            // 顧客情報
+            Route::get('customer', 'CsvOutputsController@index_customer');
+            // 誕生日リスト
+            Route::get('birthday', 'CsvOutputsController@index_birthday');
+            // 結婚記念日リスト
+            Route::get('weddinganniversary', 'CsvOutputsController@index_wedding');
+            // 案件情報
+            Route::get('project', 'CsvOutputsController@index_project');
+            // 受注情報
+            Route::get('order', 'CsvOutputsController@index_order');
+            // 未受注案件
+            Route::get('notorder', 'CsvOutputsController@index_notorder');
+            // 失注情報
+            Route::get('lostorder', 'CsvOutputsController@index_lostorder');
+            // メンテナンス情報
+            Route::get('maintenance', 'CsvOutputsController@index_maintenance');
+            // 顧客ランク更新ログ
+            Route::get( 'custrankupdlog', 'CsvOutputsController@index_custrankupdlog');
+            // 対応履歴
+            Route::get('supported', 'CsvOutputsController@index_supported');
+        });
+
+        // 検索
+        Route::get("/{page}/search/freeword", 'SearchController@searchFreeword');
 });
+//});
+
+Route::post("/mail/reset_password", 'Api\SendMailController@reset_password');
+Route::post("/check_expiry_token", 'Api\ChangePasswordController@checkExpiryToken');
+Route::post("chgpassword", 'Api\ChangePasswordController@changePasswordFromMail');

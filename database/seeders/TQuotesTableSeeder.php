@@ -34,6 +34,7 @@ class TQuotesTableSeeder extends Seeder
                 'quote_expiration_date' => '2021/02/2' . $val,
                 'order_expected_date' => '2021/03/2' . $val,
                 'remarks' => '特になし',
+                'meisai' => '見積明細',
                 'field_cooperating_cost_estimate' => 800000 + intval($val),
                 'field_cooperating_cost' => 900000 + intval($val),
                 'call_cost_estimate' => 1000000 + intval($val),

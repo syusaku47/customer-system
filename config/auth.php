@@ -96,7 +96,7 @@ return [
         'm_employees' => [
             'provider' => 'm_employees',
             'table' => 'password_resets',
-            'expire' => 60,
+            'expire' => 1440,
             'throttle' => 60,
         ],
     ],

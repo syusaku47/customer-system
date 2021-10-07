@@ -54,6 +54,7 @@ class MSubCategory extends ModelBase
         0 => 'category_id', // 大分類名称
         1 => 'name', // 中分類名称
         2 => 'is_valid', // 有効フラグ
+        3 => 'id', // ID
     ];
 
     /**
@@ -75,7 +76,7 @@ class MSubCategory extends ModelBase
         // 検索条件（where）
         self::set_where($query, $param);
         // ソート条件（order by）
-        self::_set_order_by($query, $param->input('sort_by', 0), $param->input('highlow', 0));
+        self::_set_order_by($query, $param->input('sort_by', 3), $param->input('highlow', 0));
 
         $result = $query->get();
         if ($result->count() == 0) {

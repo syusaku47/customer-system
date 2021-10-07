@@ -56,7 +56,7 @@ class CreateTProjects extends Migration
             $table->tinyInteger('alert_flag')->nullable()->comment('アラートフラグ');
             $table->string('remarks')->nullable()->comment('備考');
             $table->timestamp('created_at')->comment('登録日時');
-            $table->timestamp('updated_at')->comment('更新日時');
+            $table->timestamp('updated_at')->nullable()->comment('更新日時');
             $table->string('last_updated_by')->comment('最終更新者');
             // 外部キー成約
 //            $table->foreign('customer_id')->references('id')->on('t_customers');

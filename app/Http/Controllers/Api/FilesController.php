@@ -26,7 +26,7 @@ class FilesController extends Controller
             // パラメータから検索
             $results = TFile::search_list($request);
 
-            $count = $results->count();
+            $count = TFile::search_list_count($request)->count();
             if ($count == 0) {
                 // 総件数
                 $this->_body['hit_count'] = 0;

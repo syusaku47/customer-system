@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\MCategory;
 use App\Models\MStore;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class MCategoriesController extends Controller
@@ -17,10 +18,10 @@ class MCategoriesController extends Controller
      */
     public function index(Request $request)
     {
+
         try {
             // パラメータから検索
             $results = MCategory::search_list($request);
-
             $count = $results->count();
             if ($count == 0) {
                 // 総件数

@@ -18,7 +18,12 @@ class ChangeMEmployeesTable extends Migration
         });
 
         Schema::table('m_employees', function (Blueprint $table) {
-            $table->integer('store_id')->nullable()->comment('店舗ID')->unsigned()->change();
+            $table->integer('store_id')->nullable(false)->comment('店舗ID')->unsigned()->change();
+        });
+
+        Schema::table('m_employees', function (Blueprint $table) {
+            //passwordをハッシュ化できるようにstringの長さ変更
+            $table->string('password',255)->change();
         });
     }
 
@@ -37,6 +42,10 @@ class ChangeMEmployeesTable extends Migration
         });
         Schema::table('m_employees', function (Blueprint $table) {
             $table->string('store_name',50)->nullable()->comment('店舗名')->change();
+        });
+
+        Schema::table('m_employees', function (Blueprint $table) {
+            $table->string('password',50)->change();
         });
     }
 }

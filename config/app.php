@@ -232,4 +232,8 @@ return [
 
     ],
 
+
+    'link' => [
+        'password_change' => env('URL_PASSWORD_CHANGE'),
+    ],
 ];

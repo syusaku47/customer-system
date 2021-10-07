@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\TQuoteDetail;
 use App\Models\TQuote;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 
 /**
@@ -171,7 +170,12 @@ class QuoteDetailsController extends Controller
             // パラメータから検索
             $results = TQuoteDetail::search_detail_tree($request, $id);
 
-            $count = $results->count();
+            if ($id == 0) {
+                $count = $results->count();
+            } else {
+                // 総パーセント（粗利率の総計）のデータを末尾に追加した分、1減らす
+                $count = $results->count() == 0 ? 0 : ($results->count() - 1);
+            }
             if ($count == 0) {
                 // 総件数
                 $this->_body['hit_count'] = 0;
@@ -182,8 +186,10 @@ class QuoteDetailsController extends Controller
             // 総件数
             $this->_body['hit_count'] = $count;
             if ($id != 0) {
-                // 総パーセント
-                $this->_body['percent'] = round(mt_rand() / mt_getrandmax() * 100, 2); // TODO 計算ロジック確認要
+                // 総パーセント（粗利率の総計）
+                $this->_body['percent'] = $results[$count]['percent'];
+                // 末尾の総パーセント（粗利率の総計）データは不要なので削除
+                unset($results[$count]);
             }
             // 取得データ
             $this->_body['data'] = $results;
@@ -233,7 +239,11 @@ class QuoteDetailsController extends Controller
     {
         try {
             // パラメータから更新
-            $result = TQuoteDetail::update_print_name($request, $id, $detail_id);
+            if ($request->filled('category')) {
+                $result = TQuoteDetail::update_print_cate_name($request, $id, $detail_id);
+            } else {
+                $result = TQuoteDetail::update_print_name($request, $id, $detail_id);
+            }
             if ($result == '404') {
                 $this->_status = 0;
                 $this->_status_code = 404;

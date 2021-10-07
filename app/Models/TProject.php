@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
 
 /**
  * Class TProject<br>
@@ -188,10 +190,18 @@ class TProject extends ModelBase
      * 案件情報一覧検索
      *
      * @param Request $param 検索パラメータ
-     * @return mixed 取得データ
+     * @return mixed $query 取得クエリー
      */
-    public static function search_list(Request $param)
+    private static function _search_list(Request $param)
     {
+
+        //サブクエリ作成
+        //LEFT JOIN (SELECT COUNT(id) AS estimate_count, project_id FROM estimate GROUP BY project_id) AS estimate_status ON estimate_status.project_id = vtb_project.id)
+        $sub_query = TQuote::select("project_id", DB::raw("COUNT(project_id) as quotes_count"))->groupby('project_id');
+        // TODO 見積データテーブルのカラムが確定してから作成する
+        ////LEFT JOIN (SELECT jyutyu_yotei_dt, gokei_kin as estimate_kin, estimate_dt, project_id, id FROM estimate as e where e.saisyu_f = '1') AS estimate_last ON estimate_last.project_id = vtb_project.id)
+        //$sub_query2 = TQuote::select("id", "project_id", "including_tax_total_quote", "quote_date")->where('saisyu_f', 1);
+
         // 取得項目
         $query = TProject::select(
             // 案件データ
@@ -242,6 +252,8 @@ class TProject extends ModelBase
             // 発生源マスタ
             'ms.id as ms_id',
             'ms.name as ms_name',
+            //見積
+            'tq.quotes_count',
         )->distinct()->where('tp.is_editing', 0)->from('t_projects as tp')->join('t_customers as tc', 'tp.customer_id', '=', 'tc.id') // 顧客データ
             ->leftjoin('m_sources as ms', 'tp.source_id', '=', 'ms.id') // 発生源マスタ
         ->with(['store' => function($q) {
@@ -252,11 +264,34 @@ class TProject extends ModelBase
         }]) // 社員マスタ
         ->with(['rank_project' => function($q) {
             $q->select('name', 'id');
-        }]); // 案件ランクマスタ
+        }])// 案件ランクマスタ
+        ->leftJoin(\DB::raw("({$sub_query->toSql()}) AS tq"), 'tq.project_id', '=', 'tp.id');
+        $query->mergeBindings($sub_query->getQuery());
 
         // 検索条件（where）
         self::set_where_join($query, $param); // 案件
         self::set_where_customer_join($query, $param); // 顧客
+
+        return $query;
+    }
+
+    /**
+     * 案件情報一覧検索
+     *
+     * @param Request $param 検索パラメータ
+     * @return Collection 取得データ
+     */
+    public static function search_list(Request $param): Collection
+    {
+        $query = self::_search_list($param);
+
+//DB::enableQueryLog();
+        $result_all = $query->get();
+//Log::error(DB::getQueryLog());
+        if ($result_all->count() == 0) {
+            return $result_all;
+        }
+
         // ソート条件（order by）
         if ($param->filled('sort_by')) {
             self::_set_order_by($query, $param->input('sort_by', 2), $param->input('highlow', 0), 1);
@@ -265,7 +300,7 @@ class TProject extends ModelBase
         }
         if ($param->filled('limit')) {
             // オフセット条件（offset）
-            $query->skip($param->input('offset', 0));
+            $query->skip(($param->input('offset', 0) > 0) ? ($param->input('offset') * $param->input('limit')) : 0);
             // リミット条件（limit）
             $query->take($param->input('limit'));
         }
@@ -274,9 +309,21 @@ class TProject extends ModelBase
         if ($result->count() == 0) {
             return $result;
         }
-
         // 取得結果整形
         return self::get_format_column($result);
+    }
+
+    /**
+     * 案件情報一覧検索（全件）
+     *
+     * @param Request $param 検索パラメータ
+     * @return mixed 取得データ
+     */
+    public static function search_list_count(Request $param)
+    {
+        $query = self::_search_list($param);
+
+        return $query->get();
     }
 
     /**
@@ -404,7 +451,16 @@ class TProject extends ModelBase
         }
         // 工事部位
         if ($param->filled('construction_parts')) {
-            $arr['construction_parts'] = implode(' ', $param->input('construction_parts'));
+            //$arr['construction_parts'] = implode(' ', $param->input('construction_parts'));
+            $construction_parts = $param->input('construction_parts');
+            if (! empty($construction_parts) && is_array($construction_parts)) {
+                foreach ($construction_parts as $key => $value) {
+                    $construction_parts[$key] = str_pad($value, 3, '0', STR_PAD_LEFT);
+                }
+                $arr['construction_parts'] = implode(' ', $construction_parts);
+            } else {
+                $arr['construction_parts'] = null;
+            }
         }
         // 最終更新者
         // TODO ログインユーザー名を登録
@@ -414,17 +470,93 @@ class TProject extends ModelBase
 
         if ($id) {
             // 更新
-            $obj = TProject::find($id);
-            if (is_null($obj)) {
+            $project = TProject::find($id);
+            if (is_null($project)) {
                 return '404';
             }
 
-            // 更新処理
-            $obj->fill($arr)->save();
+            //顧客情報の取得
+            $customer = TCustomer::where('id', $arr['customer_id'])->first();
+            if (is_null($customer)) {
+                return '404';
+            }
+
+            //メンテナンス情報自動作成レコード有無
+            $m_count = TMaintenance::where('project_id', $id)->where('auto_flag', 1)->count();
+
+            //アフターメンテナンスマスタ取得
+            $amaintenance = MAfterMaintenance::where('is_valid', 1)->get();
+            if (is_null($amaintenance)) {
+                return '404';
+            }
+
+            // トランザクション開始
+            DB::beginTransaction();
+            try {
+                // 更新処理
+                $project->fill($arr)->save();
+
+                // 顧客情報の更新
+                if ($customer->ob_flag == ModelBase::NOT_OB && $param->filled('complete_date')) {
+                    $customer->ob_flag = ModelBase::OB;
+                    $customer->save();
+                }
+                //自動作成メンテナンス情報あり、かつ完工日未設定
+                if ($m_count > 0 && !$param->filled('completion_date')) {
+
+                    TMaintenance::where('project_id', $id)->where('auto_flag', 1)->delete();
+
+                //自動作成メンテナンス情報なし、かつ完工日設定
+                } else if ($m_count == 0 && $param->filled('completion_date')) {
+
+                    $tm_param = [];
+                    foreach ($amaintenance as $val) {
+                        $tm_param[] = [
+                            'customer_id'       => $arr['customer_id'],
+                            'project_id'        => $id,
+                            'maintenance_date'  => (new Carbon(Carbon::today()))->addMonthsNoOverflow($val['ins_expected_date'])->format("Y-m-d"),
+                            'supported_kubun'   => 0,
+                            'title'             => "{$customer->name}（{$project->name}）" . $val['ins_expected_date'] . "ヶ月後アフターメンテナンス",
+                            'supported_date'    => null,
+                            'is_valid'          => 1,
+                            'lat'               => $arr['lat'],
+                            'lng'               => $arr['lng'],
+                            'created_at'       => Carbon::now(),
+                            'updated_at'       => Carbon::now(),
+                            'last_updated_by'   => '管理者',// TODO ログインユーザー名を登録
+                            'auto_flag'         => 1,
+                        ];
+                    }
+                    //自動メンテナンス情報発行
+                    TMaintenance::insert($tm_param);
+                }
+                //コミット
+                DB::commit();
+            }
+            catch (\Exception $e) {
+                Log::error($e->getMessage());
+    
+                //ロールバック
+                DB::rollBack();
+                throw new \Exception("案件情報の更新に失敗しました");
+            }
         } else {
             // 登録処理
             $project = new TProject();
-            $project->fill($arr)->save();
+            // トランザクション開始
+            DB::beginTransaction();
+            try {
+                $project->fill($arr)->save();
+                //コミット
+                DB::commit();
+            }
+            catch (\Exception $e) {
+                Log::error($e->getMessage());
+    
+                //ロールバック
+                DB::rollBack();
+                throw new \Exception("案件情報の更新に失敗しました");
+            }
         }
 
         return 'ok';
@@ -439,14 +571,25 @@ class TProject extends ModelBase
      */
     public static function get_id(Request $param, int $customer_id): int
     {
-        $arr = $param->all();
-        // 必須項目をダミーで登録
-        $arr['customer_id'] = $customer_id; // 顧客ID
-        $arr['last_updated_by'] = 'ダミー'; // 最終更新者
-        $arr['is_editing'] = 1; // 編集中フラグ 編集中にする
-        // 登録処理
-        $project = new TProject();
-        $project->fill($arr)->save();
+        try {
+            $arr = $param->all();
+            // 必須項目をダミーで登録
+            $arr['customer_id'] = $customer_id; // 顧客ID
+            $arr['last_updated_by'] = 'ダミー'; // 最終更新者
+            $arr['is_editing'] = 1; // 編集中フラグ 編集中にする
+            // 登録処理
+            $project = new TProject();
+            $project->fill($arr)->save();
+            //コミット
+            DB::commit();
+        }
+        catch (\Exception $e) {
+            Log::error($e->getMessage());
+    
+            //ロールバック
+            DB::rollBack();
+            throw new \Exception("案件IDの発行に失敗しました");
+        }
 
         return TProject::get()->max('id');
     }
@@ -494,11 +637,122 @@ class TProject extends ModelBase
             $query = $query->where('tp.field_tel_no', 'like', '%' . str_replace('-', '', $param->input('field_tel_no')) . '%');
         }
         // 工事状況
-        // TODO 工事状況のロジック実装要
-//        if (CommonUtility::is_exist_variable_array($param->input('construction_status'))
-//            && !is_null($param->input('construction_status')[0])) {
-//            $query = $query->where('tp.construction_status', ModelBase::CONSTRUCTION_STATUS[$param->input('construction_status')]);
-//        }
+        if (CommonUtility::is_exist_variable_array($param->input('construction_status'))
+            && !is_null($param->input('construction_status')[0])) {
+        //    $query = $query->where('tp.construction_status', ModelBase::CONSTRUCTION_STATUS[$param->input('construction_status')]);
+        //}
+            $construction_status = $param->input('construction_status');
+            $check_value = 0;
+            foreach ($construction_status as $value) {
+                $check_value += (2 ** ($value - 1));
+            }
+            $query = $query->where(function($query) use($check_value) {
+                $where_cnt = 0;
+
+                if (($check_value & bindec('1')) > 0) {        // 案件化
+                    //$tmp_value .= "( vtb_project.id > '0' AND keiyaku_dt IS NULL AND estimate_status.estimate_count IS NULL AND cancel_dt IS NULL AND valid_dt IS NULL )";
+                    if ($where_cnt > 0) {
+                        $query = $query->orWhere(function($query) {
+                            $query->where('tp.id', '>', 0)->whereNull('contract_date')->whereNull('tq.quotes_count')->whereNull('tp.failure_date')->whereNull('tp.cancel_date');
+                        });
+
+                    } else {
+                        $query = $query->Where(function($query) {
+                            $query->where('tp.id', '>', 0)->whereNull('contract_date')->whereNull('tq.quotes_count')->whereNull('tp.failure_date')->whereNull('tp.cancel_date');
+                        });
+                        $where_cnt++;
+                    }
+                }
+                if (($check_value & bindec('10')) > 0) {       // 見積中
+                    //$tmp_value .= "( keiyaku_dt IS NULL AND estimate_status.estimate_count IS NOT NULL AND cancel_dt IS NULL AND valid_dt IS NULL )";
+                    if ($where_cnt > 0) {
+                        $query = $query->orWhere(function($query) {
+                            $query->whereNull('tp.contract_date')->whereNotNull('tq.quotes_count')->whereNull('tp.failure_date')->whereNull('tp.cancel_date');
+                        });
+
+                    } else {
+                        $query = $query->Where(function($query) {
+                            $query->whereNull('tp.contract_date')->whereNotNull('tq.quotes_count')->whereNull('tp.failure_date')->whereNull('tp.cancel_date');
+                        });
+                        $where_cnt++;
+                    }
+                }
+                if (($check_value & bindec('100')) > 0) {      // 工事中
+                    //$tmp_value .= "( keiyaku_dt IS NOT NULL AND kankou_dt IS NULL AND cancel_dt IS NULL AND valid_dt IS NULL )";
+                    if ($where_cnt > 0) {
+                        $query = $query->orWhere(function($query) {
+                            $query->whereNotNull('tp.contract_date')->whereNull('tp.completion_date')->whereNull('tp.failure_date')->whereNull('tp.cancel_date');
+                        });
+
+                    } else {
+                        $query = $query->Where(function($query) {
+                            $query->whereNotNull('tp.contract_date')->whereNull('tp.completion_date')->whereNull('tp.failure_date')->whereNull('tp.cancel_date');
+                        });
+                        $where_cnt++;
+                    }
+                }
+                if (($check_value & bindec('1000')) > 0) {     // 完工
+                    //$tmp_value .= "( kankou_dt IS NOT NULL AND cancel_dt IS NULL AND valid_dt IS NULL )";
+                    if ($where_cnt > 0) {
+                        $query = $query->orWhere(function($query) {
+                            $query->whereNotNull('tp.completion_date')->whereNull('tp.failure_date')->whereNull('tp.cancel_date');
+                        });
+
+                    } else {
+                        $query = $query->Where(function($query) {
+                            $query->whereNotNull('tp.completion_date')->whereNull('tp.failure_date')->whereNull('tp.cancel_date');
+                        });
+                        $where_cnt++;
+                    }
+                }
+                //if (($check_value & bindec(10000)) > 0) {    // 未入金
+                //    //$tmp_value .= "( seikyu_status.nyukin_flag ='0' AND cancel_dt IS NULL AND valid_dt IS NULL )";
+                //}
+
+                if (($check_value & bindec('100000')) > 0) {   // 完了
+                    //$tmp_value .= "( end_dt IS NOT NULL AND cancel_dt IS NULL AND valid_dt IS NULL )";
+                    if ($where_cnt > 0) {
+                        $query = $query->orWhere(function($query) {
+                            $query->whereNotNull('tp.complete_date')->whereNull('tp.failure_date')->whereNull('tp.cancel_date');
+                        });
+
+                    } else {
+                        $query = $query->Where(function($query) {
+                            $query->whereNotNull('tp.complete_date')->whereNull('tp.failure_date')->whereNull('tp.cancel_date');
+                        });
+                        $where_cnt++;
+                    }
+                }
+                if (($check_value & bindec('1000000')) > 0) {  // 失注
+                    //$tmp_value .= "( cancel_dt IS NOT NULL )";
+                    if ($where_cnt > 0) {
+                        $query = $query->orWhere(function($query) {
+                            $query->whereNotNull('tp.failure_date');
+                        });
+
+                    } else {
+                        $query = $query->Where(function($query) {
+                            $query->whereNotNull('tp.failure_date');
+                        });
+                        $where_cnt++;
+                    }
+                }
+                if (($check_value & bindec('10000000')) > 0) { // キャンセル
+                    //$tmp_value .= "( valid_dt IS NOT NULL )";
+                    if ($where_cnt > 0) {
+                        $query = $query->orWhere(function($query) {
+                            $query->whereNotNull('tp.cancel_date');
+                        });
+
+                    } else {
+                        $query = $query->Where(function($query) {
+                            $query->whereNotNull('tp.cancel_date');
+                        });
+                        $where_cnt++;
+                    }
+                }
+            });
+        }
 
         // 詳細検索
         // 現場住所
@@ -507,12 +761,42 @@ class TProject extends ModelBase
         }
         // 案件ランク
         if ($param->filled('project_rank')) {
-            $query = $query->where('tp.project_rank', $param->input('project_rank'));
+            //$query = $query->where('tp.project_rank', $param->input('project_rank'));
+            if ($param->filled('project_rank_filter')) {
+                switch ($param->input('project_rank_filter')) {
+                    case 1:
+                        $query = $query->where('tp.project_rank', $param->input('project_rank'));
+                        break;
+                    case 2:
+                        $query = $query->where('tp.project_rank', '>=', $param->input('project_rank'));
+                        break;
+                    case 3:
+                        $query = $query->where('tp.project_rank', '<=', $param->input('project_rank'));
+                        break;
+                }
+            } else {
+                $query = $query->where('tp.project_rank', $param->input('project_rank'));
+            }
         }
+
         // 工事部位
         if (CommonUtility::is_exist_variable_array($param->input('construction_parts'))
             && !is_null($param->input('construction_parts')[0])) {
-            $query = $query->where('tp.construction_parts', implode(' ', $param->input('construction_parts')));
+            //$query = $query->where('tp.construction_parts', implode(' ', $param->input('construction_parts')));
+            $construction_parts = $param->input('construction_parts');
+
+            $query = $query->where(function($query) use($construction_parts) {
+                $cnt = 0;
+                foreach ($construction_parts as $value) {
+                    $value = str_pad($value, 3, '0', STR_PAD_LEFT);
+                    if ($cnt === 0) {
+                        $query->where('tp.construction_parts', 'LIKE', '%'.$value.'%');
+                    } else {
+                        $query->orWhere('tp.construction_parts', 'LIKE', '%'.$value.'%');
+                    }
+                    $cnt++;
+                }
+            });
         }
 
         // 顧客詳細画面内タブでの絞込み用
@@ -556,9 +840,13 @@ class TProject extends ModelBase
         if ($param->filled('remarks')) {
             $query = $query->where('tp.remarks', $param->input('remarks'));
         }
+        // 発生源
+        if ($param->filled('source')) {
+            $query = $query->where('tp.source_id', $param->input('source'));
+        }
         // 現場郵便番号
         if ($param->filled('field_post_no')) {
-            $query = $query->where('tp.post_no', $param->input('field_post_no'));
+            $query = $query->where('tp.post_no', 'like', '%' . str_replace('-', '', $param->input('field_post_no')) . '%');
         }
 
         return;
@@ -604,11 +892,11 @@ class TProject extends ModelBase
             $query = $query->where('tc.prefecture', ModelBase::PREFECTURE[$param->input('customer_prefecture')]);
         }
 
-        // 顧客詳細画面内タブでの絞込み用
-        // 発生源
-        if ($param->filled('source')) {
-            $query = $query->where('tc.source_id', $param->input('source'));
-        }
+        //// 顧客詳細画面内タブでの絞込み用
+        //// 発生源
+        //if ($param->filled('source')) {
+        //    $query = $query->where('tc.source_id', $param->input('source'));
+        //}
 
         return;
     }
@@ -739,6 +1027,7 @@ class TProject extends ModelBase
                 'failure_date' => $arr['failure_date'], // 失注日
                 'cancel_date' => $arr['cancel_date'], // キャンセル日
                 'koji_flag' => $koji_flag, // 工事フラグ
+                'order_flag' => ModelBase::is_order($arr['contract_date'], $arr['cancel_date']), // 受注フラグ
             ];
             // 別途変換要の項目の処理
             $data2 = [
@@ -763,68 +1052,75 @@ class TProject extends ModelBase
     private static function get_format_column_one($obj): ?array
     {
         // 工事部位リスト取得
-        $construction_parts = array_map('intval', explode(' ', $obj->construction_parts));
+        //$construction_parts = array_map('intval', explode(' ', $obj->construction_parts));
+        $construction_parts      = null;
         $construction_part_names = null;
-        foreach ($construction_parts as $item) {
-            if (MPart::find($item)) {
-                $construction_part_names[] = MPart::find($item)->name;
+        if (CommonUtility::is_exist_variable($obj->construction_parts)) {
+            $construction_parts = array_map('intval', explode(' ', $obj->construction_parts));
+
+            foreach ($construction_parts as $item) {
+                if (MPart::find($item)) {
+                    $construction_part_names[] = MPart::find($item)->name;
+                }
             }
         }
 
         $data = [
-            'customer_id' => $obj->customer_id, // 顧客ID
-            'id' => $obj->id, // 案件ID
+            'customer_id'                 => $obj->customer_id, // 顧客ID
+            'id'                          => $obj->id, // 案件ID
             // 顧客データはbelongsToなので、取得した値はオブジェクトとしてチェック
-            'customer_name' => CommonUtility::is_exist_variable($obj->customer) ? $obj->customer['name'] : '', // 顧客名
-            'name' => $obj->name, // 案件名
-            'source' => $obj->source_id, // 発生源
-            'source_name' => CommonUtility::is_exist_variable($obj->source) ? $obj->source['name'] : '', // 発生源名称
-            'project_rank' => $obj->project_rank, // 案件ランク（見込みランク）
-            'project_rank_name' => CommonUtility::is_exist_variable($obj->rank_project) ? $obj->rank_project['name'] : '', // 案件ランク（見込みランク）名称
-            'project_store' => $obj->project_store, // 案件担当店舗
-            'project_store_name' => CommonUtility::is_exist_variable($obj->store) ? $obj->store['name'] : '', // 案件担当店舗名称
-            'project_representative' => $obj->project_representative, // 案件担当者
+            'customer_name'               => CommonUtility::is_exist_variable($obj->customer) ? $obj->customer['name'] : '', // 顧客名
+            'name'                        => $obj->name, // 案件名
+            'source'                      => $obj->source_id, // 発生源
+            'source_name'                 => CommonUtility::is_exist_variable($obj->source) ? $obj->source['name'] : '', // 発生源名称
+            'project_rank'                => $obj->project_rank, // 案件ランク（見込みランク）
+            'project_rank_name'           => CommonUtility::is_exist_variable($obj->rank_project) ? $obj->rank_project['name'] : '', // 案件ランク（見込みランク）名称
+            'project_store'               => $obj->project_store, // 案件担当店舗
+            'project_store_name'          => CommonUtility::is_exist_variable($obj->store) ? $obj->store['name'] : '', // 案件担当店舗名称
+            'project_representative'      => $obj->project_representative, // 案件担当者
             'project_representative_name' => CommonUtility::is_exist_variable($obj->employee) ? $obj->employee['name'] : '', // 案件担当者名称
-            'field_name' => $obj->field_name, // 現場名称
-            'field_post_no' => $obj->post_no, // 現場郵便番号
-            'field_prefecture' => array_search($obj->prefecture, ModelBase::PREFECTURE), // 現場都道府県
-            'field_prefecture_name' => $obj->prefecture, // 現場都道府県名称
-            'field_city' => $obj->city, // 現場市区町村
-            'field_address' => $obj->address, // 現場地名、番地
-            'field_building_name' => $obj->building_name, // 現場建物名等
-            'post_no' => CommonUtility::is_exist_variable($obj->customer) ? $obj->customer['post_no'] : '', // 顧客_郵便番号
-            'prefecture' => CommonUtility::is_exist_variable($obj->customer) ? array_search($obj->customer['prefecture'], ModelBase::PREFECTURE) : '', // 顧客_都道府県
-            'prefecture_name' => CommonUtility::is_exist_variable($obj->customer) ? $obj->customer['prefecture'] : '', // 顧客_都道府県名称
-            'city' => CommonUtility::is_exist_variable($obj->customer) ? $obj->customer['city'] : '', // 顧客_市区町村
-            'address' => CommonUtility::is_exist_variable($obj->customer) ? $obj->customer['address'] : '', // 顧客_地名、番地
-            'building_name' => CommonUtility::is_exist_variable($obj->customer) ? $obj->customer['building_name'] : '', // 顧客_建物名等
-            'customer_place' => '', // 顧客住所 別途結合してマージする
-            'field_place' => '', // 現場住所 別途結合してマージする
-            'field_tel_no' => $obj->field_tel_no, // 現場電話番号
-            'field_fax_no' => $obj->field_fax_no, // 現場FAX
-            'construction_parts' => array_map('intval', explode(' ', $obj->construction_parts)), // 工事部位
-            'construction_part_names' => $construction_part_names, // 工事部位名称
-            'expected_amount' => $obj->expected_amount, // 見込み金額
-            'contract_no' => $obj->contract_no, // 契約番号
-            'contract_date' => $obj->contract_date, // 契約日
-            'construction_period_start' => $obj->construction_period_start, // 受注工期（開始）
-            'construction_period_end' => $obj->construction_period_end, // 受注工期（終了）
-            'construction_start_date' => $obj->construction_start_date, // 着工予定日
-            'completion_end_date' => $obj->completion_end_date, // 完工予定日
-            'construction_date' => $obj->construction_date, // 着工日
-            'completion_date' => $obj->completion_date, // 完工日
-            'complete_date' => $obj->complete_date, // 完了日
-            'failure_date' => $obj->failure_date, // 失注日
-            'failure_cause' => $obj->failure_cause, // 失注理由
-            'failure_cause_name' => CommonUtility::is_exist_variable($obj->lost_order) ? $obj->lost_order['lost_reason'] : '', // 失注理由名称
-            'failure_remarks' => $obj->failure_remarks, // 失注備考
-            'cancel_date' => $obj->cancel_date, // キャンセル日
-            'cancel_reason' => $obj->cancel_reason, // キャンセル理由
-            'execution_end' => $obj->execution_end, // 実行終了
-            'order_detail1' => $obj->order_detail1, // 受注詳細（追加1 – 最終原価）
-            'order_detail2' => $obj->order_detail2, // 受注詳細（追加2 – 最終原価）
-            'lat' => $obj->lat, // 緯度
-            'lng' => $obj->lng, // 経度
+            'field_name'                  => $obj->field_name, // 現場名称
+            'field_post_no'               => $obj->post_no, // 現場郵便番号
+            'field_prefecture'            => array_search($obj->prefecture, ModelBase::PREFECTURE), // 現場都道府県
+            'field_prefecture_name'       => $obj->prefecture, // 現場都道府県名称
+            'field_city'                  => $obj->city, // 現場市区町村
+            'field_address'               => $obj->address, // 現場地名、番地
+            'field_building_name'         => $obj->building_name, // 現場建物名等
+            'post_no'                     => CommonUtility::is_exist_variable($obj->customer) ? $obj->customer['post_no'] : '', // 顧客_郵便番号
+            'prefecture'                  => CommonUtility::is_exist_variable($obj->customer) ? array_search($obj->customer['prefecture'], ModelBase::PREFECTURE) : '', // 顧客_都道府県
+            'prefecture_name'             => CommonUtility::is_exist_variable($obj->customer) ? $obj->customer['prefecture'] : '', // 顧客_都道府県名称
+            'city'                        => CommonUtility::is_exist_variable($obj->customer) ? $obj->customer['city'] : '', // 顧客_市区町村
+            'address'                     => CommonUtility::is_exist_variable($obj->customer) ? $obj->customer['address'] : '', // 顧客_地名、番地
+            'building_name'               => CommonUtility::is_exist_variable($obj->customer) ? $obj->customer['building_name'] : '', // 顧客_建物名等
+            'customer_place'              => '', // 顧客住所 別途結合してマージする
+            'field_place'                 => '', // 現場住所 別途結合してマージする
+            'field_tel_no'                => $obj->field_tel_no, // 現場電話番号
+            'field_fax_no'                => $obj->field_fax_no, // 現場FAX
+            //'construction_parts'          => array_map('intval', explode(' ', $obj->construction_parts)), // 工事部位
+            'construction_parts'          => $construction_parts, // 工事部位
+            'construction_part_names'     => $construction_part_names, // 工事部位名称
+            'expected_amount'             => $obj->expected_amount, // 見込み金額
+            'contract_no'                 => $obj->contract_no, // 契約番号
+            'contract_date'               => $obj->contract_date, // 契約日
+            'construction_period_start'   => $obj->construction_period_start, // 受注工期（開始）
+            'construction_period_end'     => $obj->construction_period_end, // 受注工期（終了）
+            'construction_start_date'     => $obj->construction_start_date, // 着工予定日
+            'completion_end_date'         => $obj->completion_end_date, // 完工予定日
+            'construction_date'           => $obj->construction_date, // 着工日
+            'completion_date'             => $obj->completion_date, // 完工日
+            'complete_date'               => $obj->complete_date, // 完了日
+            'failure_date'                => $obj->failure_date, // 失注日
+            'failure_cause'               => $obj->failure_cause, // 失注理由
+            'failure_cause_name'          => CommonUtility::is_exist_variable($obj->lost_order) ? $obj->lost_order['lost_reason'] : '', // 失注理由名称
+            'failure_remarks'             => $obj->failure_remarks, // 失注備考
+            'cancel_date'                 => $obj->cancel_date, // キャンセル日
+            'cancel_reason'               => $obj->cancel_reason, // キャンセル理由
+            'execution_end'               => $obj->execution_end, // 実行終了
+            'order_detail1'               => $obj->order_detail1, // 受注詳細（追加1 – 最終原価）
+            'order_detail2'               => $obj->order_detail2, // 受注詳細（追加2 – 最終原価）
+            'order_flag'                  => ModelBase::is_order($obj->contract_date, $obj->cancel_date), // 受注フラグ
+            'lat'                         => $obj->lat, // 緯度
+            'lng'                         => $obj->lng, // 経度
         ];
         // 別途変換要の項目の処理
         $data2 = [
@@ -835,5 +1131,56 @@ class TProject extends ModelBase
         $result[] = array_merge($data, $data2);
 
         return $result;
+    }
+
+    /**
+     * 案件情報フリーワード検索
+     *
+     * @param Request $param 検索パラメータ
+     * @return Collection 取得データ
+     */
+    public static function search_list_freeword(Request $param): Collection
+    {
+        $query = self::_search_list($param);
+
+        // 検索条件（or）
+        if ($param->filled('keyword') || !is_null($param->input('keyword'))) {
+            self::set_orwhere($query, $param->input('keyword'));
+        }
+
+        // ソート条件（order by）
+        if ($param->filled('sort_by')) {
+            self::_set_order_by($query, $param->input('sort_by', 2), $param->input('highlow', 0), 1);
+        } else {
+            self::_set_order_by($query, $param->input('filter_by', 12), $param->input('highlow', 0), 2);
+        }
+        if ($param->filled('limit')) {
+            // オフセット条件（offset）
+            $query->skip(($param->input('offset', 0) > 0) ? ($param->input('offset') * $param->input('limit')) : 0);
+            // リミット条件（limit）
+            $query->take($param->input('limit'));
+        }
+
+        $result = $query->get();
+        if ($result->count() == 0) {
+            return $result;
+        }
+        // 取得結果整形
+        return self::get_format_column($result);
+    }
+
+    public static function set_orwhere(&$query, String $keyword)
+    {
+        $query->where(function($_query) use ($keyword) {
+            // 案件名
+            $_query->orWhere('tp.name', 'like', '%' . $keyword . '%');
+            // 現場電話番号
+            $_query->orWhere('tp.field_tel_no', 'like', '%' . str_replace('-', '', $keyword) . '%');
+            // 現場住所
+            $_query->orWhere('tp.field_address', 'like', '%' . $keyword . '%');
+            // 顧客名
+            $_query->orWhere('tc.name', 'like', '%' . $keyword . '%');
+        });
+        return;
     }
 }

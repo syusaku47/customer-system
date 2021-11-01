@@ -109,13 +109,14 @@ class MSubCategory extends ModelBase
 //
 //                dd($test);
 
-//        $ids = MSubCategory::selectRaw('MAX(id) AS id')
-//          ->groupBy('category_id')
-//          ->pluck('id');
-//
-//      $test = MSubCategory::whereIn('id', $ids)
-//          ->orderBy('id', 'DESC')
-//          ->get();
+        $ids = MSubCategory::selectRaw('MAX(id) AS id')
+          ->groupBy('category_id')
+          ->pluck('id');
+
+      $test = MSubCategory::whereIn('id', $ids)
+          ->orderBy('id', 'DESC')
+          ->get();
+      dd($test);
 
         // 検索条件（where）
         self::set_where($query, $param);

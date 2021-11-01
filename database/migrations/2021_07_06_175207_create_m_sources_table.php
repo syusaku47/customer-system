@@ -8,16 +8,20 @@ class CreateMSourcesTable extends Migration
 {
     /**
      * Run the migrations.<br>
-     * 発生源マスタ
+     * 対応履歴 媒体(発生源)マスタ
      *
      * @return void
      */
     public function up()
     {
         Schema::create('m_sources', function (Blueprint $table) {
-            $table->increments('id')->comment('発生源マスタID');
-            $table->string('name', 30)->nullable()->comment('名称');
+            $table->increments('id')->comment('対応履歴 媒体(発生源)マスタID');
+            $table->integer('company_id')->comment('会社ID');
+            $table->integer('internal_id')->comment('内部ID');
+            $table->string('name', 255)->nullable()->comment('名称');
             $table->tinyInteger('is_valid')->default(1)->nullable()->comment('有効フラグ');
+            $table->integer('order')->default(999)->comment('表示順');
+            $table->unique(['company_id', 'id']);
         });
     }
 

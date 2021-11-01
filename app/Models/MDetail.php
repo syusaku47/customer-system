@@ -7,16 +7,23 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use DB;
+use Throwable;
+use Auth;
+//use App\Traits\HasCompositePrimaryKey;
 
 class MDetail extends ModelBase
 {
     use HasFactory;
-    // テーブル名はクラスの複数形のスネークケース（m_details）
-    // 主キーのデフォルト名はid
-    // 主キーはデフォルトではINT型のAuto Increment
-    // デフォルトではタイムスタンプを自動更新（created_at、updated_atを生成）
-    // デフォルトの接続データベースは .env の DB_CONNECTION の定義内容
+//    use HasCompositePrimaryKey;
 
+    // テーブル名はクラスの複数形のスネークケース（m_details）
+    // 複合キーで主キーのデフォルト名はid,company_id
+
+//    // プライマリキー設定
+//    protected $primaryKey = ['id', 'company_id'];
+//    // increment無効化
+//    public $incrementing = false;
     /**
      * モデルにタイムスタンプを付けるか
      *
@@ -30,7 +37,9 @@ class MDetail extends ModelBase
      * @var array
      */
     protected $attributes = [
-        'is_valid' => 1,
+        'valid_flag' => 1,
+        'order' => 999,
+
     ];
 
     /**
@@ -39,17 +48,20 @@ class MDetail extends ModelBase
      * @var string[]
      */
     protected $fillable = [
-        'product_kubun',
-        'category_name',
-        'subcategory_name',
+        'company_id',
+        'internal_id',
+        'shohin_cd',
+        'shohin_kubun',
+        'daibunrui_id',
+        'tyubunrui_id',
         'name',
-        'standard',
-        'quantity',
-        'credit_name',
-        'quote_unit_price',
-        'prime_cost',
-        'is_valid',
-
+        'kikaku',
+        'suryou',
+        'tani_id',
+        'genka',
+        'shikiri_kakaku',
+        'valid_flag',
+        'order',
     ];
 
     /**
@@ -78,16 +90,18 @@ class MDetail extends ModelBase
      * @var string[]
      */
     protected const SORT_BY_COLUMN = [
-        0 => 'product_kubun', // 商品区分
-        1 => 'category_name', // 大分類名称
-        2 => 'subcategory_name', // 中分類名称
-        3 => 'name', // 名称
-        4 => 'standard', // 規格
-        5 => 'quantity', // 数量
-        6 => 'credit_name', // 単位名称
-        7 => 'quote_unit_price', // 見積単価
-        8 => 'prime_cost', // 見積単価
-        9 => 'is_valid', // 有効フラグ
+        0 => 'order', // 表示順
+        1 => 'internal_id', // 表示ID
+        2 => 'shohin_kubun', // 商品区分
+        3 => 'daibunrui_name', // 大分類名称
+        4 => 'tyubunrui_name', // 中分類名称
+        5 => 'name', // 名称
+        6 => 'kikaku', // 規格
+        7 => 'suryou', // 数量
+        8 => 'tani_name', // 単位名称
+        9 => 'shikiri_kakaku', // 見積単価
+        10 => 'genka', // 原価
+        11 => 'valid_flag', // 有効フラグ
     ];
 
     /**
@@ -98,25 +112,33 @@ class MDetail extends ModelBase
      */
     public static function search_list(Request $param)
     {
+        //      セッションからログインユーザーのcompany_idを取得
+        $company_id = session()->get('company_id');
         // 取得項目
-        $query = MDetail::select(
-            'id',
-            'product_kubun',
-            'category_name',
-            'subcategory_name',
-            'name',
-            'standard',
-            'quantity',
-            'credit_name',
-            'quote_unit_price',
-            'prime_cost',
-            'is_valid',
-        )->with(['category' => function($q) {
-            $q->select('name', 'id')->where('is_valid', 1);
-        }]) // 大分類マスタ
-        ->with(['sub_category' => function($q) {
-            $q->select('name', 'id')->where('is_valid', 1);
-        }]); // 中分類マスタ
+        $query = DB::table('m_details as d')
+        ->select(
+            'd.id',
+            'd.internal_id',
+            'd.company_id',
+//          'd.shohin_cd',
+            'd.shohin_kubun',
+            'c.name as daibunrui_name',
+            's.name as tyubunrui_name',
+            'd.name',
+            'd.kikaku',
+            'd.suryou',
+            'cr.name as tani_name',
+            'd.genka',
+            'd.shikiri_kakaku',
+            'd.valid_flag',
+            'd.order',
+            )->leftjoin('m_categories as c', 'd.daibunrui_id', '=', 'c.id')
+            ->leftjoin('m_sub_categories as s', 'd.tyubunrui_id', '=', 's.id')
+            ->leftjoin('m_credits as cr','d.tani_id', '=', 'cr.id')
+            ->where('d.company_id', $company_id);
+
+
+
 
         // 検索条件（where）
         self::set_where($query, $param);
@@ -148,29 +170,31 @@ class MDetail extends ModelBase
         }
 
         $shohin_kubun = $param->input('shohin_kubun');
-        self::like_where($query,"product_kubun",$shohin_kubun); //商品区分絞り込み
+        self::id_where($query,"shohin_kubun",$shohin_kubun); //商品区分絞り込み
 
-        $category_name = $param->input('category_name');
-        self::like_where($query,"category_name",$category_name); //大分類絞り込み
+        $category_id = $param->input('category_id');
+        self::id_where($query,"daibunrui_id",$category_id); //大分類絞り込み
 
-        $subcategory_name = $param->input('subcategory_name');
-        self::like_where($query,"subcategory_name",$subcategory_name); //中分類絞り込み
+        $subcategory_id = $param->input('subcategory_id');
+        self::id_where($query,"tyubunrui_id",$subcategory_id); //中分類絞り込み
 
         $word = $param->input('word');
         self::like_orWhere($query,$word); //名称、規格絞り込み
+
+
     }
 
-    public static function like_where($query, $column, $keyword){
-        if ($keyword != null) {
-            $query->where($column, 'like', "%". $keyword ."%");
+    public static function id_where($query, $column, $id){
+        if ($id != null) {
+            $query->where($column, "=", $id);
         }
     }
 
     public static function like_orWhere($query, $keyword){
         if ($keyword != null) {
             $query->where(function($query) use ($keyword){ //orの優先順位のため無名関数使用
-               $query->orWhere("name", 'like', "%". $keyword ."%")
-                   ->orWhere("standard", 'like', "%". $keyword ."%");
+               $query->orWhere("d.name", 'like', "%". $keyword ."%")
+                   ->orWhere("d.kikaku", 'like', "%". $keyword ."%");
             });
         }
     }
@@ -219,20 +243,20 @@ class MDetail extends ModelBase
     {
         $results = new Collection();
         foreach ($collection as $item) {
-            $arr = $item->toArray();
             $data = [
-                'detail_id' => $arr['id'], // 明細マスタID
-                'id' => $arr['id'], // ID
-                'product_kubun' => array_key_exists($arr['product_kubun'], ModelBase::SHOHIN_KUBUN) ? ModelBase::SHOHIN_KUBUN[$arr['product_kubun']] : '', // 商品区分
-                'category_name' => CommonUtility::is_exist_variable_array($arr['category']) ? $arr['category']['name'] : '', // 大分類名称
-                'subcategory_name' => CommonUtility::is_exist_variable_array($arr['sub_category']) ? $arr['sub_category']['name'] : '', // 中分類名称
-                'name' => $arr['name'], // 名称
-                'standard' => $arr['standard'], // 規格
-                'quantity' => $arr['quantity'], // 数量
-                'credit_name' => $arr['credit_name'], // 単位名称
-                'quote_unit_price' => $arr['quote_unit_price'], // 見積単価
-                'prime_cost' => $arr['prime_cost'], // 原価
-                'valid_flag' => ($arr['is_valid']) ? true : false, // 有効フラグ
+                'id' => $item->id, // オートインクリメントID
+                'company_id' => $item->company_id, // 会社ID
+                'internal_id' => $item->internal_id, // 内部ID
+                'product_kubun' => array_key_exists($item->shohin_kubun, ModelBase::SHOHIN_KUBUN) ? ModelBase::SHOHIN_KUBUN[$item->shohin_kubun] : '', // 商品区分
+                'category_name' => $item->daibunrui_name, // 大分類名称
+                'subcategory_name' => $item->tyubunrui_name, // 中分類名称
+                'name' => $item->name, // 名称
+                'standard' => $item->kikaku, // 規格
+                'quantity' => $item->suryou, // 数量
+                'credit_name' => $item->tani_name, // 単位名称
+                'quote_unit_price' => $item->shikiri_kakaku, // 見積単価
+                'prime_cost' => $item->genka, // 原価
+                'valid_flag' => ($item->valid_flag) ? true : false, // 有効フラグ
 
             ];
             $results->push($data);
@@ -240,5 +264,107 @@ class MDetail extends ModelBase
 
         return $results;
     }
+
+    /**
+     * 明細マスタ情報保存（登録・更新）
+     *
+     * @param Request $param
+     * @param int|null $id
+     * @return collection
+     */
+    public static function upsert(Request $param, int $id = null)
+    {
+
+
+        try {
+//        全パラメータ取得
+            $arr = $param->all();
+
+//          セッションからログインユーザーのcompany_idを取得
+            $company_id = session()->get('company_id');
+            //            重複チェック
+            $tmp = MDetail::where('company_id',$company_id)
+                ->where("name", $arr['name'])->first();
+            if (self::isRepeatName($tmp, $id)) {
+                return ["code" => 'err_name'];
+            }
+
+//            トランザクション
+            DB::beginTransaction();
+
+            if ($id) {
+                // 更新
+                $instance = MDetail::find($id);
+                if (is_null($instance)) {
+                    return ["code" => '404'];
+//                    ログインユーザーのcompany_idと一致しているか
+                }elseif ($instance->company_id != $company_id){
+                    return ["code" => '403'];
+                }
+
+                $instance->shohin_kubun = $param->product_kubun;
+                $instance->daibunrui_id = $param->category_id;
+                $instance->tyubunrui_id = $param->subcategory_id;
+//                $instance->name = $param->name;
+                $instance->kikaku = $param->standard;
+                $instance->suryou = $param->quantity;
+                $instance->tani_id = $param->credit_id;
+                $instance->shikiri_kakaku = $param->quote_unit_price;
+                $instance->genka = $param->prime_cost;
+//                $instance->valid_flag = $param->valid_flag;
+
+                // 更新処理
+                $instance->fill($arr)->update();
+            } else {
+
+                // 登録
+                $instance = new MDetail();
+                $instance->company_id = $company_id;
+
+                //                内部ID(internal_id)の最大値取得
+                $max_internal_id = MDetail::where('company_id', $company_id)->max('internal_id');
+
+//                    internal_idの最大値+1をそれぞれDBに格納
+                $instance->internal_id = $max_internal_id ? ($max_internal_id + 1):  1;
+                $instance->shohin_cd = $max_internal_id ? ($max_internal_id + 1):  1;
+
+                $instance->shohin_kubun = $param->product_kubun;
+                $instance->daibunrui_id = $param->category_id;
+                $instance->tyubunrui_id = $param->subcategory_id;
+//                $instance->name = $param->name;
+                $instance->kikaku = $param->standard;
+                $instance->suryou = $param->quantity;
+                $instance->tani_id = $param->credit_id;
+                $instance->shikiri_kakaku = $param->quote_unit_price;
+                $instance->genka = $param->prime_cost;
+//                $instance->valid_flag = $param->valid_flag;
+
+                // 登録処理
+                $instance->fill($arr)->save();
+            }
+            DB::commit();
+            return ["code" => ""];
+
+        } catch (Throwable $e) {
+            DB::rollback();
+//            トランザクションエラー
+            \Log::debug($e);
+            return ["code" => 'fail'];
+        }
+    }
+
+    /*
+     * 重複チェック
+     */
+    private static function isRepeatName($instance, $id)
+    {
+//        同じIDでないのは重複とみなす
+        if ($instance)
+            if ($instance->id !== $id)
+                return true;
+
+        return false;
+    }
+
 
 }

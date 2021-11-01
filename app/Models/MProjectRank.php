@@ -3,8 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use DB;
+use Throwable;
+use Auth;
+//use App\Traits\HasCompositePrimaryKey;
 
 /**
  * Class MProjectRank<br>
@@ -15,13 +20,16 @@ use Illuminate\Support\Collection;
 class MProjectRank extends ModelBase
 {
     use HasFactory;
+//    use HasCompositePrimaryKey;
+
 
     // テーブル名はクラスの複数形のスネークケース（m_project_ranks）
-    // 主キーのデフォルト名はid
-    // 主キーはデフォルトではINT型のAuto Increment
-    // デフォルトではタイムスタンプを自動更新（created_at、updated_atを生成）
-    // デフォルトの接続データベースは .env の DB_CONNECTION の定義内容
+    // 複合キーで主キーのデフォルト名はid,company_id
 
+//    // プライマリキー設定
+//    protected $primaryKey = ['id', 'company_id'];
+//    // increment無効化
+//    public $incrementing = false;
     /**
      * モデルにタイムスタンプを付けるか
      *
@@ -35,23 +43,33 @@ class MProjectRank extends ModelBase
      * @var string[]
      */
     protected $fillable = [
+        'company_id',
+        'internal_id',
         'name',
         'abbreviation',
         'text_color',
         'background_color',
+        'is_valid',
+        'order',
     ];
 
+    protected $attributes = [
+        'is_valid' => 1,
+        'order' => 999,
+    ];
     /**
      * ソート用カラム定義
      *
      * @var string[]
      */
     protected const SORT_BY_COLUMN = [
-        0 => 'id', // 案件ランクマスタID
-        1 => 'name', // 案件ランク名称
-        2 => 'abbreviation', // 案件ランク略称
-        3 => 'text_color', // 文字色
+        0 => 'order', // 順位
+        1 => 'internal_id', // 表示ID
+        2 => 'name', // 案件ランク名称
+        3 => 'abbreviation', // 案件ランク略称
         4 => 'background_color', // 背景色
+        5 => 'text_color', // 文字色
+        6 => 'is_valid', // 有効フラグ
     ];
 
     /**
@@ -62,14 +80,24 @@ class MProjectRank extends ModelBase
      */
     public static function search_list(Request $param)
     {
+//      セッションからログインユーザーのcompany_idを取得
+        $company_id = session()->get('company_id');
+
         // 取得項目
         $query = MProjectRank::select(
             'id',
+            'internal_id',
+            'company_id',
             'name',
             'abbreviation',
+            'order',
             'text_color',
             'background_color',
-        );
+            'is_valid',
+        )->where('company_id', $company_id);
+
+        // 検索条件（where）
+        self::set_where($query, $param);
 
         // ソート条件（order by）
         self::_set_order_by($query, $param->input('sort_by', 0), $param->input('highlow', 0));
@@ -95,6 +123,21 @@ class MProjectRank extends ModelBase
         self::_set_order_by($query, $order_column_id, $sort_id);
 
         return;
+    }
+
+    /**
+     * 検索条件設定
+     *
+     * @param $query
+     * @param Request $param 検索パラメータ
+     */
+    public static function set_where(&$query, Request $param)
+    {
+        // マスタ管理用
+        // 無効情報も含む
+        if ($param->input('is_muko') == 0 || !$param->input('is_muko')) {
+            $query = $query->where('is_valid', 1); // 有効情報のみ
+        }
     }
 
     /**
@@ -129,15 +172,102 @@ class MProjectRank extends ModelBase
         foreach ($collection as $item) {
             $arr = $item->toArray();
             $data = [
-                'project_rank_id' => $arr['id'], // 案件ランクマスタID
-                'name' => $arr['name'], // 案件ランク名称
-                'abbreviation' => $arr['abbreviation'], // 案件ランク略称
-                'text_color' => $arr['text_color'], // 文字色
-                'background_color' => $arr['background_color'], // 背景色
+                'id' => $item->id, // オートインクリメントID
+                'company_id' => $item->company_id, // 会社ID
+                'internal_id' => $item->internal_id, // 内部ID
+                'name' => $item->name, // 案件ランク名称
+                'abbreviation' => $item->abbreviation, // 案件ランク略称
+                'text_color' => $item->text_color, // 文字色
+                'background_color' => $item->background_color, // 背景色
+                'order' => $item->order, // 顧客見込みランク順位
+                'valid_flag' => ($item->is_valid) ? true : false, // 有効フラグ
             ];
             $results->push($data);
         }
 
         return $results;
     }
+
+    /**
+     * 顧客見込みランク情報保存（登録・更新）
+     *
+     * @param Request $param
+     * @param int|null $id
+     * @return collection
+     */
+    public static function upsert(Request $param, int $id = null)
+    {
+
+
+        try {
+//        全パラメータ取得
+            $arr = $param->all();
+
+//          セッションからログインユーザーのcompany_idを取得
+            $company_id = session()->get('company_id');
+
+            //            ランク名、略式表示の重複チェック
+            $tmp = MProjectRank::where('company_id', $company_id)
+                ->where(function ($q) use ($arr) {
+                    $q->where("name", $arr['name'])
+                        ->orWhere("abbreviation", $arr['abbreviation']);
+                })
+                ->first();
+            if (self::isRepeatName($tmp, $id)) {
+                return ["code" => 'err_name'];
+            }
+
+//            トランザクション
+            DB::beginTransaction();
+
+            if ($id) {
+                // 更新
+                $instance = MProjectRank::find($id);
+                if (is_null($instance)) {
+                    return ["code" => '404'];
+//                    ログインユーザーのcompany_idと一致しているか
+                }elseif ($instance->company_id != $company_id){
+                    return ["code" => '403'];
+                }
+
+                // 更新処理
+                $instance->fill($arr)->update();
+            } else {
+
+                // 登録
+                $instance = new MProjectRank();
+                $instance->company_id = $company_id;
+
+//                内部ID(internal_id)の最大値取得
+                $max_internal_id = MProjectRank::where('company_id', $company_id)->max('internal_id');
+//                internal_idの最大値+1をそれぞれDBに格納
+                $instance->internal_id = $max_internal_id ? ($max_internal_id + 1):  1;
+
+                // 登録処理
+                $instance->fill($arr)->save();
+            }
+            DB::commit();
+            return ["code" => ""];
+
+        } catch (Throwable $e) {
+            DB::rollback();
+            \Log::debug($e);
+//            トランザクションエラー
+            return ["code" => 'fail'];
+        }
+    }
+
+    /*
+     * 重複チェック
+     */
+    private static function isRepeatName($instance, $id)
+    {
+//        同じIDでないのは重複とみなす
+        if ($instance)
+            if ($instance->id !== $id)
+                return true;
+
+        return false;
+    }
+
 }

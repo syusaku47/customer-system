@@ -3,8 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use DB;
+use Throwable;
+use Auth;
 
 /**
  * Class MTag<br>
@@ -19,9 +23,7 @@ class MTag extends ModelBase
     // テーブル名はクラスの複数形のスネークケース（m_tags）
     // 主キーのデフォルト名はid
     // 主キーはデフォルトではINT型のAuto Increment
-    // デフォルトではタイムスタンプを自動更新（created_at、updated_atを生成）
-    // デフォルトの接続データベースは .env の DB_CONNECTION の定義内容
-
+    // company_id, internal_idはユニークキー
     /**
      * モデルにタイムスタンプを付けるか
      *
@@ -35,8 +37,8 @@ class MTag extends ModelBase
      * @var array
      */
     protected $attributes = [
-        'is_input' => 0,
         'is_valid' => 1,
+        'order' => 99,
     ];
 
     /**
@@ -45,9 +47,11 @@ class MTag extends ModelBase
      * @var string[]
      */
     protected $fillable = [
+        'company_id',
+        'internal_id',
         'name',
-        'is_input',
         'is_valid',
+        'order',
     ];
 
     /**
@@ -56,12 +60,11 @@ class MTag extends ModelBase
      * @var string[]
      */
     protected const SORT_BY_COLUMN = [
-        0 => 'id', // ID
-        1 => 'name', // 関連タグ名称
-        2 => 'is_input', // テキスト入力有無フラグ
+        0 => 'order', // 表示順
+        1 => 'internal_id', // 表示ID
+        2 => 'name', // 名称
         3 => 'is_valid', // 有効フラグ
     ];
-
     /**
      * 関連タグマスタ情報一覧検索
      *
@@ -70,13 +73,17 @@ class MTag extends ModelBase
      */
     public static function search_list(Request $param)
     {
+//      セッションからログインユーザーのcompany_idを取得
+        $company_id = session()->get('company_id');
         // 取得項目
         $query = MTag::select(
             'id',
+            'company_id',
+            'internal_id',
             'name',
-            'is_input',
+            'order',
             'is_valid',
-        );
+        )->where('company_id', $company_id);
 
         // 検索条件（where）
         self::set_where($query, $param);
@@ -134,7 +141,7 @@ class MTag extends ModelBase
     {
         if (is_null($order_column_id) || is_null($sort_id)) {
             // 未指定の場合、関連タグ名称の昇順
-            $query->orderBy(self::SORT_BY_COLUMN[1], ModelBase::SORT_KIND[0]);
+            $query->orderBy(self::SORT_BY_COLUMN[0], ModelBase::SORT_KIND[0]);
         } else {
             $query->orderBy(self::SORT_BY_COLUMN[$order_column_id], ModelBase::SORT_KIND[$sort_id]);
         }
@@ -155,14 +162,102 @@ class MTag extends ModelBase
         foreach ($collection as $item) {
             $arr = $item->toArray();
             $data = [
-                'id' => $arr['id'], // ID
+                'id' => $arr['id'], // オートインクリメントID
+                'company_id' => $arr['company_id'], // 会社ID
+                'internal_id' => $arr['internal_id'], // 表示ID
                 'name' => $arr['name'], // 関連タグ名称
-                'input_flag' => $arr['is_input'], // テキスト入力有無フラグ
-                'valid_flag' => $arr['is_valid'], // 有効フラグ
+                'order' => $arr['order'], // 表示順
+                'valid_flag' => ($arr['is_valid']) ? true : false, // 有効フラグ
             ];
             $results->push($data);
         }
 
         return $results;
+    }
+
+    /**
+     * 関連タグマスタ情報保存（登録・更新）
+     *
+     * @param Request $param
+     * @param int|null $id
+     * @return collection
+     */
+    public static function upsert(Request $param, int $id = null)
+    {
+
+
+        try {
+//        全パラメータ取得
+            $arr = $param->all();
+
+//          セッションからログインユーザーのcompany_idを取得
+            $company_id = session()->get('company_id');
+
+            //            重複チェック
+            $tmp = MTag::where('company_id',$company_id)
+                ->where("name", $arr['name'])->first();
+            if (self::isRepeatName($tmp, $id)) {
+                return ["code" => 'err_name'];
+            }
+
+//            トランザクション
+            DB::beginTransaction();
+
+            if ($id) {
+                // 更新
+                $instance = MTag::find($id);
+                if (is_null($instance)) {
+                    return ["code" => '404'];
+//                    ログインユーザーのcompany_idと一致しているか
+                }elseif ($instance->company_id != $company_id){
+                    return ["code" => '403'];
+                }
+
+                // 更新処理
+                $instance->fill($arr)->update();
+            } else {
+//                最大99件作成可能
+                $max_num = 100;
+//                その他を含まないinternal_id最大値取得
+                $max_internal_id = MTag::where('company_id', $company_id)
+                ->where('internal_id', '<', $max_num )
+                ->max('internal_id');
+
+                if( $max_internal_id === ($max_num - 1) ){
+                    return ["code" => 'full'];
+                }
+
+                // 登録
+                $instance = new MTag();
+                $instance->company_id = $company_id;
+
+//                    internal_idの最大値+1をそれぞれDBに格納
+                $instance->internal_id = $max_internal_id ? ($max_internal_id + 1):  1;
+
+                // 登録処理
+                $instance->fill($arr)->save();
+            }
+            DB::commit();
+            return ["code" => ""];
+
+        } catch (Throwable $e) {
+            DB::rollback();
+            \Log::debug($e);
+//            トランザクションエラー
+            return ["code" => 'fail'];
+        }
+    }
+
+    /*
+     * 重複チェック
+     */
+    private static function isRepeatName($instance, $id)
+    {
+//        同じIDでないのは重複とみなす
+        if ($instance)
+            if ($instance->id !== $id)
+                return true;
+
+        return false;
     }
 }

@@ -1,0 +1,157 @@
+<svg id="print_estimate_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="810" height="564" viewBox="0 0 810 564">
+  <style>text{font-family: IPA Mincho, IPAMincho, MS-PMincho, MS PMincho, IPA Gothic, IPAGothic;}</style>
+  <rect width="810" height="564" style="fill: #fff"/>
+  <path d="M301.12,68.89H56.14q-18.36,0-19.86,16.8l-.18,2.4V538.93q0,19.98,20.04,19.98h729.9q20.07,0,20.04-19.98V88.09l-.12-2.4a27.1,27.1,0,0,0-1.02-5.16c-2.4-7.74-8.7-11.64-18.9-11.64H542.14" transform="translate(-16 -15.61)" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1.01999998092651px"/>
+  <text transform="translate(314, 69)" font-size="35" fill="#000" font-weight="bold">御</text>
+  <text transform="translate(359, 69)" font-size="35" fill="#000" font-weight="bold">見</text>
+  <text transform="translate(403, 69)" font-size="35" fill="#000" font-weight="bold">積</text>
+  <text transform="translate(448, 69)" font-size="35" fill="#000" font-weight="bold">書</text>
+  <line x1="640.08" y1="77.28" x2="780.06" y2="77.28" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+  <line x1="548.04" y1="307.98" x2="775.08" y2="307.98" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+  <line x1="548.04" y1="287.88" x2="775.08" y2="287.88" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+  <line x1="135.06" y1="405" x2="775.08" y2="405" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+  <line x1="630.06" y1="163.08" x2="180.06" y2="163.08" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+  <line x1="40.141" y1="108.36" x2="435.061" y2="108.36" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+  <line x1="135.061" y1="262.98" x2="445.08" y2="262.98" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+  <line x1="135.061" y1="307.86" x2="445.08" y2="307.86" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+  <line x1="135.061" y1="288" x2="445.08" y2="288" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+  <text transform="translate(641, 72)" font-size="12" fill="#000" font-weight="bold"><tspan>N</tspan><tspan y="-0.5">o.</tspan></text>
+  <g transform="translate(641, 95)">
+    <text font-size="11" fill="#000" font-weight="bold">日</text>
+    <text transform="translate(17, 0)" font-size="11" fill="#000" font-weight="bold">付</text>
+  </g>
+  <g transform="translate(184, 159)">
+    <text transform="translate(0, 0)" font-size="12" fill="#000" font-weight="bold">御</text>
+    <text transform="translate(22, 0)" font-size="12" fill="#000" font-weight="bold">見</text>
+    <text transform="translate(44, 0)" font-size="12" fill="#000" font-weight="bold">積</text>
+    <text transform="translate(66, 0)" font-size="12" fill="#000" font-weight="bold">金</text>
+    <text transform="translate(88, 0)" font-size="12" fill="#000" font-weight="bold">額</text>
+  </g>
+  <g transform="translate(269, 181)">
+    <text transform="translate(0, 0)" font-size="12" fill="#000" font-weight="bold">税</text>
+    <text transform="translate(12, 0)" font-size="12" fill="#000" font-weight="bold">抜</text>
+    <text transform="translate(24, 0)" font-size="12" fill="#000" font-weight="bold">見</text>
+    <text transform="translate(36, 0)" font-size="12" fill="#000" font-weight="bold">積</text>
+    <text transform="translate(48, 0)" font-size="12" fill="#000" font-weight="bold">金</text>
+    <text transform="translate(60, 0)" font-size="12" fill="#000" font-weight="bold">額</text>
+  </g>
+  <g transform="translate(269, 200)">
+    <text transform="translate(0, 0)" font-size="12" fill="#000" font-weight="bold">消</text>
+    <text transform="translate(12, 0)" font-size="12" fill="#000" font-weight="bold">費</text>
+    <text transform="translate(24, 0)" font-size="12" fill="#000" font-weight="bold">税</text>
+    <text transform="translate(36, 0)" font-size="12" fill="#000" font-weight="bold">額</text>
+  </g>
+  <g transform="translate(569, 160)">
+    <text transform="translate(0, 0)" font-size="9" fill="#000" font-weight="bold">(</text>
+    <text transform="translate(4, 0)" font-size="9" fill="#000" font-weight="bold">税</text>
+    <text transform="translate(13, 0)" font-size="9" fill="#000" font-weight="bold">込</text>
+    <text transform="translate(22, 0)" font-size="9" fill="#000" font-weight="bold">)</text>
+  </g>
+  <g transform="translate(461, 284)">
+    <text transform="translate(0, 0)" font-size="15" fill="#000" font-weight="bold">電</text>
+    <text transform="translate(23, 0)" font-size="15" fill="#000" font-weight="bold">話</text>
+    <text transform="translate(46, 0)" font-size="15" fill="#000" font-weight="bold">番</text>
+    <text transform="translate(69, 0)" font-size="15" fill="#000" font-weight="bold">号</text>
+  </g>
+  <g transform="translate(461, 304)">
+    <text transform="translate(0, 0)" font-size="15" fill="#000" font-weight="bold">見</text>
+    <text transform="translate(14, 0)" font-size="15" fill="#000" font-weight="bold">積</text>
+    <text transform="translate(28, 0)" font-size="15" fill="#000" font-weight="bold">有</text>
+    <text transform="translate(42, 0)" font-size="15" fill="#000" font-weight="bold">効</text>
+    <text transform="translate(56, 0)" font-size="15" fill="#000" font-weight="bold">期</text>
+    <text transform="translate(70, 0)" font-size="15" fill="#000" font-weight="bold">限</text>
+  </g>
+  <g transform="translate(51, 259)">
+    <text transform="translate(0, 0)" font-size="15" fill="#000" font-weight="bold">工</text>
+    <text transform="translate(19, 0)" font-size="15" fill="#000" font-weight="bold">事</text>
+    <text transform="translate(38, 0)" font-size="15" fill="#000" font-weight="bold">名</text>
+    <text transform="translate(57, 0)" font-size="15" fill="#000" font-weight="bold">称</text>
+  </g>
+  <g transform="translate(51, 284)">
+    <text transform="translate(0, 0)" font-size="15" fill="#000" font-weight="bold">工</text>
+    <text transform="translate(19, 0)" font-size="15" fill="#000" font-weight="bold">事</text>
+    <text transform="translate(38, 0)" font-size="15" fill="#000" font-weight="bold">場</text>
+    <text transform="translate(57, 0)" font-size="15" fill="#000" font-weight="bold">所</text>
+  </g>
+  <g transform="translate(51, 331)">
+    <text transform="translate(0, 0)" font-size="15" fill="#000" font-weight="bold">備</text>
+    <text transform="translate(57, 0)" font-size="15" fill="#000" font-weight="bold">考</text>
+  </g>
+  <g transform="translate(316, 417)">
+    <text transform="translate(0, 0)" font-size="12" fill="#000" font-weight="bold">上</text>
+    <text transform="translate(11.4, 0)" font-size="12" fill="#000" font-weight="bold">記</text>
+    <text transform="translate(22.8, 0)" font-size="12" fill="#000" font-weight="bold">の</text>
+    <text transform="translate(34.2, 0)" font-size="12" fill="#000" font-weight="bold">通</text>
+    <text transform="translate(45.6, 0)" font-size="12" fill="#000" font-weight="bold">り</text>
+    <text transform="translate(57, 0)" font-size="12" fill="#000" font-weight="bold">御</text>
+    <text transform="translate(68.4, 0)" font-size="12" fill="#000" font-weight="bold">見</text>
+    <text transform="translate(79.8, 0)" font-size="12" fill="#000" font-weight="bold">積</text>
+    <text transform="translate(91.2, 0)" font-size="12" fill="#000" font-weight="bold">申</text>
+    <text transform="translate(102.6, 0)" font-size="12" fill="#000" font-weight="bold">し</text>
+    <text transform="translate(114, 0)" font-size="12" fill="#000" font-weight="bold">上</text>
+    <text transform="translate(125.4, 0)" font-size="12" fill="#000" font-weight="bold">げ</text>
+    <text transform="translate(136.8, 0)" font-size="12" fill="#000" font-weight="bold">ま</text>
+    <text transform="translate(148.2, 0)" font-size="12" fill="#000" font-weight="bold">す</text>
+    <text transform="translate(159.6, 0)" font-size="12" fill="#000" font-weight="bold">。</text>
+  </g>
+  <rect x="660.42" y="483.36" width="60" height="49.98" style="fill: #fff"/>
+  <rect x="660.42" y="483.36" width="60" height="49.98" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1.01999998092651px"/>
+  <rect x="720.42" y="483.36" width="60" height="49.98" style="fill: #fff"/>
+  <rect x="720.42" y="483.36" width="60" height="49.98" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1.01999998092651px"/>
+  <g transform="translate(544.5, 158)">
+    <circle r="1.6"/>
+    <line transform="translate(5, -8.5)" x1="0" y1="0" x2="12" y2="0" stroke="black"/>
+  </g>
+  <g transform="translate(457.5, 182.5)">
+    <circle r="1"/>
+    <line transform="translate(3, -5)" x1="0" y1="0" x2="7" y2="0" stroke="black"/>
+  </g>
+  <g transform="translate(457.5, 202.5)">
+    <circle r="1"/>
+    <line transform="translate(3, -5)" x1="0" y1="0" x2="7" y2="0" stroke="black"/>
+  </g>
+  <text transform="translate(457 531)" font-size="10">担当者：</text>
+  <text transform="translate(457 520)" font-size="10">代表取締役：</text>
+  <g transform="translate(487 509)">
+    <text transform="translate(-30 0)" font-size="10">お客様</text>
+    <text transform="translate(0, 0)" font-size="10">フ</text>
+    <text transform="translate(8.6, 0)" font-size="10">リ</text>
+    <text transform="translate(17.2, 0)" font-size="10">ー</text>
+    <text transform="translate(26, 0)" font-size="10">ダ</text>
+    <text transform="translate(35, 0)" font-size="10">イ</text>
+    <text transform="translate(43, 0)" font-size="10">ヤ</text>
+    <text transform="translate(51.6, 0)" font-size="10">ル</text>
+    <text transform="translate(60.2, 0)" font-size="10">：</text>
+  </g>
+  <text transform="translate(550 498)" font-size="10">FAX：</text>
+  <g transform="translate(457 498)">
+    <text transform="translate(0, 0)" font-size="10">T</text>
+    <text transform="translate(6, 0)" font-size="10">E</text>
+    <text transform="translate(12, 0)" font-size="10">L</text>
+    <text transform="translate(19.5, 0)" font-size="10">: </text>
+  </g>
+  <g id="変数名">
+    <text transform="translate(48.06 103.38)" style="font-size: 28px;">%%printEstimate1_1_%%</text>
+    <text transform="translate(660.959 71.82)" style="font-size: 12px;">%%printEstimate1_2_%%</text>
+    <text id="_date_-右寄" data-name="$date$-右寄" text-anchor="end" transform="translate(737.765 94.82)" style="font-size: 12px;">%%printEstimate1_3_%%</text>
+    <text transform="translate(138 259.14)" style="font-size: 16px;">%%printEstimate1_7_%%</text>
+    <text transform="translate(138 284.101)" style="font-size: 16px;">%%printEstimate1_8_%%</text>
+    <text transform="translate(138 304.101)" style="font-size: 16px;">%%printEstimate1_9_%%</text>
+    <text id="_expirationDate_" data-name="$expirationDate$" transform="translate(554 303.083) scale(1.053 1)" style="font-size: 15.1876802444458px;">%%printEstimate1_11_%%</text>
+    <text transform="translate(554 283.56)" style="font-size: 16px;">%%printEstimate1_10_%%</text>
+    <text id="_totalPraice_-右寄" data-name="$totalPraice$-右寄" text-anchor="end" transform="translate(538.619 159.38)" style="font-size: 28px;">%%printEstimate1_4_%%</text>
+    <text id="_excludingTax_-右寄" data-name="$excludingTax$-右寄" text-anchor="end" transform="translate(454.6 183.54)" style="font-size: 16px;">%%printEstimate1_5_%%</text>
+    <text id="_consumptionTax_-右寄" data-name="$consumptionTax$-右寄" text-anchor="end" transform="translate(454.6 204.53)" style="font-size: 16px;">%%printEstimate1_6_%%</text>
+    <image id="_icon_" data-name="$icon$" width="1154" height="212" transform="translate(168.168 463.349) scale(0.24 0.24)" xlink:href="%%printEstimate1_30_%%"/>
+    <text id="_company_" data-name="$company$" transform="translate(456.987 449.319)" style="font-size: 14px;">%%printEstimate1_31_%%</text>
+    <text transform="translate(456.987 462.159)" style="font-size: 12px;">%%printEstimate1_32_%%</text>
+    <text id="_post_" data-name="$post$" transform="translate(456.987 475.779)" style="font-size: 10px;">%%printEstimate1_33_%%</text>
+    <text id="_address_" data-name="$address$" transform="translate(456.987 486.819)" style="font-size: 10px;">%%printEstimate1_34_%%</text>
+    <text id="_tel_" data-name="$tel$" transform="translate(480.456 497.859)" style="font-size: 10.020000457763672px;letter-spacing: 0.0020466877807485714em">%%printEstimate1_35_%%</text>
+    <text transform="translate(575.073 497.859)" style="font-size: 10.020000457763672px;letter-spacing: 0.0020466877807485714em">%%printEstimate1_36_%%</text>
+    <text transform="translate(553.987 508.899)" style="font-size: 10.020000457763672px;">%%printEstimate1_37_%%</text>
+    <text transform="translate(513.435 519.939)" style="font-size: 10.020000457763672px;">%%printEstimate1_38_%%</text>
+    <text transform="translate(492.753 530.979)" style="font-size: 10.020000457763672px;">%%printEstimate1_39_%%</text>
+    <text transform="translate(138 331.44)" style="font-size: 16px;">%%printEstimate1_12_%%</text>
+  </g>
+</svg>

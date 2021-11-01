@@ -32,8 +32,8 @@ class CreateTMaintenancesTable extends Migration
             $table->timestamp('updated_at')->nullable()->comment('更新日時');
             $table->string('last_updated_by')->comment('最終更新者');
             // 外部キー制約
-            $table->foreign('customer_id')->references('id')->on('t_customers'); // 顧客データ
-            $table->foreign('project_id')->references('id')->on('t_projects'); // 案件データ
+//            $table->foreign('customer_id')->references('id')->on('t_customers'); // 顧客データ
+//            $table->foreign('project_id')->references('id')->on('t_projects'); // 案件データ
 //            $table->foreign('sales_contact')->references('id')->on('m_employees'); // 契約会社マスタ // TODO 後で追加
         });
     }

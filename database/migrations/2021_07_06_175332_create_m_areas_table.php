@@ -16,9 +16,13 @@ class CreateMAreasTable extends Migration
     {
         Schema::create('m_areas', function (Blueprint $table) {
             $table->increments('id')->comment('エリアマスタID');
-            $table->string('store_name', 30)->nullable()->comment('店舗名');
-            $table->string('name', 30)->nullable()->comment('エリア名称');
+            $table->integer('company_id')->comment('会社ID');
+            $table->integer('internal_id')->comment('内部ID');
+            $table->integer('office_id')->comment('店舗ID');
+            $table->string('name', 255)->nullable()->comment('エリア名称');
             $table->tinyInteger('is_valid')->default(1)->nullable()->comment('有効フラグ');
+            $table->integer('order')->default(999)->comment('表示順');
+            $table->unique(['company_id', 'internal_id']);
         });
     }
 

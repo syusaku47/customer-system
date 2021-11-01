@@ -16,7 +16,7 @@ class CreateTOrdersTable extends Migration
     {
         Schema::create('t_orders', function (Blueprint $table) {
             $table->increments('id')->comment('受注ID');
-            $table->integer('project_id')->comment('案件ID')->unsigned();
+            $table->bigInteger('project_id')->comment('案件ID')->unsigned();
             $table->integer('quote_id')->nullable()->comment('見積ID')->unsigned();
 //            $table->integer('company_id')->comment('会社ID')->unsigned();
             $table->date('contract_date')->nullable()->comment('契約日');
@@ -45,8 +45,8 @@ class CreateTOrdersTable extends Migration
             $table->timestamp('updated_at')->nullable()->comment('更新日時');
             $table->string('last_updated_by')->comment('最終更新者');
             // 外部キー制約
-            $table->foreign('project_id')->references('id')->on('t_projects'); // 案件データ
-            $table->foreign('quote_id')->references('id')->on('t_quotes'); // 見積データ
+//            $table->foreign('project_id')->references('id')->on('t_projects'); // 案件データ
+//            $table->foreign('quote_id')->references('id')->on('t_quotes'); // 見積データ
 //            $table->foreign('sales_contact')->references('id')->on('m_employees'); // 契約会社マスタ // TODO 後で追加
         });
     }

@@ -16,9 +16,12 @@ class CreateMMyCarTypesTable extends Migration
     {
         Schema::create('m_my_car_types', function (Blueprint $table) {
             $table->increments('id')->comment('マイカー種別マスタID');
-            $table->string('name', 30)->nullable()->comment('名称');
-            $table->tinyInteger('is_input')->default(0)->nullable()->comment('テキスト入力有無フラグ');
+            $table->integer('company_id')->comment('会社ID');
+            $table->integer('internal_id')->comment('内部ID');
+            $table->string('name', 255)->nullable()->comment('名称');
             $table->tinyInteger('is_valid')->default(1)->nullable()->comment('有効フラグ');
+            $table->integer('order')->comment('表示順');
+//            $table->unique(['company_id', 'id']);
         });
     }
 

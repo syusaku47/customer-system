@@ -6,15 +6,25 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use DB;
+use Throwable;
+use Auth;
+//use App\Traits\HasCompositePrimaryKey;
+
 
 class MCredit extends ModelBase
 {
     use HasFactory;
+//    use HasCompositePrimaryKey;
+
     // テーブル名はクラスの複数形のスネークケース（m_credits）
-    // 主キーのデフォルト名はid
     // 主キーはデフォルトではINT型のAuto Increment
-    // デフォルトではタイムスタンプを自動更新（created_at、updated_atを生成）
-    // デフォルトの接続データベースは .env の DB_CONNECTION の定義内容
+    // company_id, internal_idはユニークキー
+
+//    // プライマリキー設定
+//    protected $primaryKey = ['id', 'company_id'];
+//    // increment無効化
+//    public $incrementing = false;
 
     /**
      * モデルにタイムスタンプを付けるか
@@ -30,6 +40,7 @@ class MCredit extends ModelBase
      */
     protected $attributes = [
         'is_valid' => 1,
+        'order' => 999,
     ];
 
     /**
@@ -38,9 +49,11 @@ class MCredit extends ModelBase
      * @var string[]
      */
     protected $fillable = [
+        'company_id',
+        'internal_id',
         'name',
         'is_valid',
-
+        'order',
     ];
 
     /**
@@ -49,8 +62,10 @@ class MCredit extends ModelBase
      * @var string[]
      */
     protected const SORT_BY_COLUMN = [
-        0 => 'name', // 名称
-        1 => 'is_valid', // 有効フラグ
+        0 => 'order', // 表示順
+        1 => 'internal_id', // 表示ID
+        2 => 'name', // 名称
+        3 => 'is_valid', // 有効フラグ
     ];
 
     /**
@@ -61,12 +76,17 @@ class MCredit extends ModelBase
      */
     public static function search_list(Request $param)
     {
+//      セッションからログインユーザーのcompany_idを取得
+        $company_id = session()->get('company_id');
         // 取得項目
         $query = MCredit::select(
             'id',
+            'internal_id',
+            'company_id',
             'name',
+            'order',
             'is_valid',
-        );
+        )->where('company_id', $company_id);
 
         // 検索条件（where）
         self::set_where($query, $param);
@@ -143,12 +163,13 @@ class MCredit extends ModelBase
     {
         $results = new Collection();
         foreach ($collection as $item) {
-            $arr = $item->toArray();
             $data = [
-                'credit_id' => $arr['id'], // 店舗マスタID
-                'id' => $arr['id'], // 店舗マスタID
-                'name' => $arr['name'], // 名称
-                'valid_flag' => ($arr['is_valid']) ? true : false, // 有効フラグ
+                'id' => $item->id, // オートインクリメントID
+                'company_id' => $item->company_id, // 会社ID
+                'internal_id' => $item->internal_id, // 内部ID
+                'name' => $item->name, // 名称
+                'order' => $item->order, // 表示順
+                'valid_flag' => ($item->is_valid) ? true : false, // 有効フラグ
 
             ];
             $results->push($data);
@@ -156,5 +177,84 @@ class MCredit extends ModelBase
 
         return $results;
     }
+
+    /**
+     * 単位マスタ情報保存（登録・更新）
+     *
+     * @param Request $param
+     * @param int|null $id
+     * @return collection
+     */
+    public static function upsert(Request $param, int $id = null)
+    {
+
+
+        try {
+//        全パラメータ取得
+            $arr = $param->all();
+
+//          セッションからログインユーザーのcompany_idを取得
+            $company_id = session()->get('company_id');
+
+            //            重複チェック
+            $tmp = MCredit::where('company_id',$company_id)
+                ->where("name", $arr['name'])->first();
+            if (self::isRepeatName($tmp, $id)) {
+                return ["code" => 'err_name'];
+            }
+
+//            トランザクション
+            DB::beginTransaction();
+
+            if ($id) {
+                // 更新
+                $instance = MCredit::find($id);
+                if (is_null($instance)) {
+                    return ["code" => '404'];
+//                    ログインユーザーのcompany_idと一致しているか
+                }elseif ($instance->company_id != $company_id){
+                    return ["code" => '403'];
+                }
+
+                // 更新処理
+                $instance->fill($arr)->update();
+            } else {
+
+                // 登録
+                $instance = new MCredit();
+                $instance->company_id = $company_id;
+
+//                内部ID(internal_id)の最大値取得
+                $max_internal_id = MCredit::where('company_id', $company_id)->max('internal_id');
+//                internal_idの最大値+1をそれぞれDBに格納
+                $instance->internal_id = $max_internal_id ? ($max_internal_id + 1):  1;
+
+                // 登録処理
+                $instance->fill($arr)->save();
+            }
+            DB::commit();
+            return ["code" => ""];
+
+        } catch (Throwable $e) {
+            DB::rollback();
+            \Log::debug($e);
+//            トランザクションエラー
+            return ["code" => 'fail'];
+        }
+    }
+
+    /*
+     * 重複チェック
+     */
+    private static function isRepeatName($instance, $id)
+    {
+//        同じIDでないのは重複とみなす
+        if ($instance)
+            if ($instance->id !== $id)
+                return true;
+
+        return false;
+    }
+
 
 }

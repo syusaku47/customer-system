@@ -25,7 +25,8 @@ return [
     'paths' => ['api/*',
         'login', // 追加
         'logout', // 追加
-        'sanctum/csrf-cookie'],
+        'sanctum/csrf-cookie'
+    ],
 
     /*
      * マッチするHTTPメソッド。 `[*]` だと全てのリクエストにマッチする。

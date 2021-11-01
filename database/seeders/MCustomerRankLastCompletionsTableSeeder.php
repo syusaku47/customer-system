@@ -17,12 +17,30 @@ class MCustomerRankLastCompletionsTableSeeder extends Seeder
     {
         // テスト環境用マスタデータ（現行システムから抽出）
         $names = [['1', '1'], ['2', '2'], ['3', '3'], ['4', '4']];
-        for($i = 0; $i <= count($names) - 1; $i++) {
+        foreach ($names as $i => $name) {
+//            company_id = 1 バージョン
             DB::table('m_customer_rank_last_completions')->insert([
+                'company_id' => 1,
+                'internal_id' => $i + 1,
                 'name' => $names[$i][0],
                 'abbreviation' => $names[$i][1],
                 'date' => $i + 1, // 日数
+                'is_valid' => rand(0, 1), // 0:無効 1:有効
+                'order' => rand(1, 999),
             ]);
         }
+        foreach ($names as $i => $name) {
+//            company_id = 2 バージョン
+            DB::table('m_customer_rank_last_completions')->insert([
+                'company_id' => 2,
+                'internal_id' => $i + 1,
+                'name' => $names[$i][0],
+                'abbreviation' => $names[$i][1],
+                'date' => $i + 1, // 日数s
+                'is_valid' => rand(0, 1), // 0:無効 1:有効
+                'order' => rand(1, 999),
+            ]);
+        }
+
     }
 }

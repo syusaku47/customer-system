@@ -40,9 +40,9 @@ class CreateTQuotesTable extends Migration
             $table->timestamp('updated_at')->nullable()->comment('更新日時');
             $table->string('last_updated_by')->comment('最終更新者');
             // 外部キー成約
-            $table->foreign('project_id')->references('id')->on('t_projects');
+//            $table->foreign('project_id')->references('id')->on('t_projects');
 //            $table->foreign('company_id')->references('id')->on('t_projects'); // TODO 後で追加
-            $table->foreign('quote_creator')->references('id')->on('m_employees');
+//            $table->foreign('quote_creator')->references('id')->on('m_employees');
         });
     }
 

@@ -27,6 +27,11 @@ class TCustomer extends ModelBase
     // デフォルトではタイムスタンプを自動更新（created_at、updated_atを生成）
     // デフォルトの接続データベースは .env の DB_CONNECTION の定義内容
 
+    /* モデルにタイムスタンプを付けるか
+    *
+    * @var bool
+         */
+    public $timestamps = false;
     /**
      * モデルの属性のデフォルト値
      *
@@ -106,6 +111,8 @@ class TCustomer extends ModelBase
         'ob_flag',
         'is_editing',
         'last_updated_by',
+        'koji_rank',
+        'last_rank',
     ];
 
     /*
@@ -116,112 +123,114 @@ class TCustomer extends ModelBase
     ];
 
     protected static $csv_columns = [
-        'sales_shop' =>'営業担当（店舗）',
-        'sales_contact' =>'営業担当（担当者）',
-        'name' =>'顧客_名称',
-        'keisho' =>'顧客_敬称',
-        'furigana' =>'顧客_フリガナ',
-        'tel_no' =>'電話番号',
-        'tel_no2' =>'電話番号2',
-        'tel_no3' =>'電話番号3',
-        'is_deficiency' =>'不備情報のみ',
-        'fax_no' =>'FAX番号',
-        'mail_address' =>'メールアドレス',
-        'mail_address2' =>'メールアドレス2',
-        'mail_address3' =>'メールアドレス3',
-        'post_no' =>'郵便番号',
-        'prefecture' =>'住所_都道府県',
-        'city' =>'住所_市区町村',
-        'address' =>'住所_地名番地',
-        'building_name' =>'住所_建物名等',
-        'line_id' =>'LINEID',
-        'facebook_id' =>'FacebookID',
-        'twitter_id' =>'TwitterID',
-        'instagram_id' =>'InstagramID',
-        'rank' =>'顧客ランク',
-        'rank_filter' =>'顧客ランクフィルタ',
-        'estimated_rank' =>'顧客見込みランク',
-        'estimated_rank_filter' =>'顧客見込みランクフィルタ',
-        'source_id' =>'発生源',
-        'area_id' =>'エリア',
-        'building_category_id' =>'建物分類',
-        'madori_id' =>'間取り',
-        'building_age' =>'築年数',
-        'completion_start_year' =>'完工時期（開始年）',
-        'completion_start_month' =>'完工時期（開始月）',
-        'completion_end_year' =>'完工時期（終了年）',
-        'completion_end_month' =>'完工時期（終了月）',
-        'last_completion_start_year' =>'最終完工時期（開始年）',
-        'last_completion_start_month' =>'最終完工時期（開始月）',
-        'last_completion_end_year' =>'最終完工時期（終了年）',
-        'last_completion_end_month' =>'最終完工時期（終了月）',
-        'total_work_price_min' =>'総工事金額（最小値）',
-        'total_work_price_max' =>'総工事金額（最大値）',
-        'work_times_min' =>'工事回数（最小値）',
-        'work_times_max' =>'工事回数（最大値）',
-        'tag_list' =>'関連タグ',
-        'part_list' =>'部位',
-        'expected_part_list' =>'見込み部位',
-        'remarks' =>'備考',
-        'memo1' =>'社内メモ1',
-        'memo2' =>'社内メモ2',
-        'my_car_type' =>'マイカー種別',
-        'my_car_type_other' =>'マイカー種別_その他',
-        'introducer' =>'紹介者',
-        'wedding_anniversary' =>'結婚記念日',
-        'friend_meeting' =>'友の会',
-        'reform_album' =>'リフォームアルバム',
-        'case_permit' =>'事例許可',
-        'field_tour_party' =>'現場見学会',
-        'lat' =>'緯度',
-        'lng' =>'経度',
-        'ob_flag' =>'OBフラグ',
+        'sales_shop' => '営業担当（店舗）',
+        'sales_contact' => '営業担当（担当者）',
+        'name' => '顧客_名称',
+        'keisho' => '顧客_敬称',
+        'furigana' => '顧客_フリガナ',
+        'tel_no' => '電話番号',
+        'tel_no2' => '電話番号2',
+        'tel_no3' => '電話番号3',
+        'is_deficiency' => '不備情報のみ',
+        'fax_no' => 'FAX番号',
+        'mail_address' => 'メールアドレス',
+        'mail_address2' => 'メールアドレス2',
+        'mail_address3' => 'メールアドレス3',
+        'post_no' => '郵便番号',
+        'prefecture' => '住所_都道府県',
+        'city' => '住所_市区町村',
+        'address' => '住所_地名番地',
+        'building_name' => '住所_建物名等',
+        'line_id' => 'LINEID',
+        'facebook_id' => 'FacebookID',
+        'twitter_id' => 'TwitterID',
+        'instagram_id' => 'InstagramID',
+        'rank' => '顧客ランク',
+        'rank_filter' => '顧客ランクフィルタ',
+        'estimated_rank' => '顧客見込みランク',
+        'estimated_rank_filter' => '顧客見込みランクフィルタ',
+        'source_id' => '発生源',
+        'area_id' => 'エリア',
+        'building_category_id' => '建物分類',
+        'madori_id' => '間取り',
+        'building_age' => '築年数',
+        'completion_start_year' => '完工時期（開始年）',
+        'completion_start_month' => '完工時期（開始月）',
+        'completion_end_year' => '完工時期（終了年）',
+        'completion_end_month' => '完工時期（終了月）',
+        'last_completion_start_year' => '最終完工時期（開始年）',
+        'last_completion_start_month' => '最終完工時期（開始月）',
+        'last_completion_end_year' => '最終完工時期（終了年）',
+        'last_completion_end_month' => '最終完工時期（終了月）',
+        'total_work_price_min' => '総工事金額（最小値）',
+        'total_work_price_max' => '総工事金額（最大値）',
+        'work_times_min' => '工事回数（最小値）',
+        'work_times_max' => '工事回数（最大値）',
+        'tag_list' => '関連タグ',
+        'part_list' => '部位',
+        'expected_part_list' => '見込み部位',
+        'remarks' => '備考',
+        'memo1' => '社内メモ1',
+        'memo2' => '社内メモ2',
+        'my_car_type' => 'マイカー種別',
+        'my_car_type_other' => 'マイカー種別_その他',
+        'introducer' => '紹介者',
+        'wedding_anniversary' => '結婚記念日',
+        'friend_meeting' => '友の会',
+        'reform_album' => 'リフォームアルバム',
+        'case_permit' => '事例許可',
+        'field_tour_party' => '現場見学会',
+        'lat' => '緯度',
+        'lng' => '経度',
+        'ob_flag' => 'OBフラグ',
     ];
 
     protected static $employee_cd = [
-        "nagai" =>1,
-        "amino" =>2,
-        "admin" =>3,
-        "bunkop" =>4,
-        "niikura" =>5,
-        "yajima" =>6,
-        "chinen" =>7,
-        "kato" =>8,
-        "nojiri" =>9,
-        "yosinaga" =>10,
-        "mitsuru" =>11,
-        "tano" =>12,
-        "yamada" =>13,
-        "hosouchi" =>14,
-        "matsui" =>15,
-        "saito" =>16,
-        "yashima" =>17,
-        "yoshinag" =>18,
-        "mochida" =>19,
-        "suzuki" =>20,
-        "kawamura" =>21,
-        "soumu" =>22,
-        "ikegami" =>23,
-        "kobayash" =>24,
-        "handa" =>25,
-        "tsuji" =>26,
-        "miyazaki" =>27,
-        "watanabe" =>28,
-        "kodama" =>29,
-        "wata330" =>30,
-        "aoki" =>31,
-        "kaneko" =>32,
-        "ezaki" =>33,
-        "uemori" =>34,
-        "kojima" =>35,
-        "tanaka" =>36,
+        "nagai" => 1,
+        "amino" => 2,
+        "admin" => 3,
+        "bunkop" => 4,
+        "niikura" => 5,
+        "yajima" => 6,
+        "chinen" => 7,
+        "kato" => 8,
+        "nojiri" => 9,
+        "yosinaga" => 10,
+        "mitsuru" => 11,
+        "tano" => 12,
+        "yamada" => 13,
+        "hosouchi" => 14,
+        "matsui" => 15,
+        "saito" => 16,
+        "yashima" => 17,
+        "yoshinag" => 18,
+        "mochida" => 19,
+        "suzuki" => 20,
+        "kawamura" => 21,
+        "soumu" => 22,
+        "ikegami" => 23,
+        "kobayash" => 24,
+        "handa" => 25,
+        "tsuji" => 26,
+        "miyazaki" => 27,
+        "watanabe" => 28,
+        "kodama" => 29,
+        "wata330" => 30,
+        "aoki" => 31,
+        "kaneko" => 32,
+        "ezaki" => 33,
+        "uemori" => 34,
+        "kojima" => 35,
+        "tanaka" => 36,
     ];
 
-    protected static function get_columns(){
+    protected static function get_columns()
+    {
         return static::$csv_columns;
     }
 
-    protected static function get_employee_codes(){
+    protected static function get_employee_codes()
+    {
         return static::$employee_cd;
     }
 
@@ -378,19 +387,19 @@ class TCustomer extends ModelBase
             'field_tour_party',
             'lat',
             'lng',
-        )->where('is_editing', 0)->with(['employee' => function($q) {
+        )->where('is_editing', 0)->with(['employee' => function ($q) {
             $q->select('name', 'id')->where('is_valid', 1);
         }]) // 社員マスタ
-        ->with(['customer_estimated_rank' => function($q) {
+        ->with(['customer_estimated_rank' => function ($q) {
             $q->select('name', 'id', 'order');
         }]) // 顧客見込みランクマスタ
-        ->with(['area' => function($q) {
+        ->with(['area' => function ($q) {
             $q->select('name', 'id')->where('is_valid', 1);
         }]) // エリアマスタ
-        ->with(['building' => function($q) {
+        ->with(['building' => function ($q) {
             $q->select('name', 'id')->where('is_valid', 1);
         }]) // 建物分類マスタ
-        ->with(['madori' => function($q) {
+        ->with(['madori' => function ($q) {
             $q->select('name', 'id')->where('is_valid', 1);
         }]); // 間取りマスタ
 
@@ -473,7 +482,7 @@ class TCustomer extends ModelBase
             'post_no',
             'wedding_anniversary',
             'sales_contact',
-        )->where('is_editing', 0)->with(['project' => function($q) use($param) {
+        )->where('is_editing', 0)->with(['project' => function ($q) use ($param) {
             $q->select('id', 'customer_id', 'construction_status', 'completion_date');
             // 工事状況
             if (CommonUtility::is_exist_variable_array($param->input('construction_status'))
@@ -483,7 +492,7 @@ class TCustomer extends ModelBase
                 }
             }
         }]) // 案件データ
-        ->with(['family' => function($q) use($param) {
+        ->with(['family' => function ($q) use ($param) {
             $q->select('id', 'name', 'relationship', 'mobile_phone', 'birth_date');
             // 家族お名前
             if ($param->filled('family_name')) {
@@ -542,7 +551,7 @@ class TCustomer extends ModelBase
                 $q->where('wedding_anniversary', '<=', new \DateTime($birth_month_end . '/' . $birth_day_end));
             }
         }]) // 家族データ
-        ->with(['employee' => function($q) {
+        ->with(['employee' => function ($q) {
             $q->select('name', 'id')->where('is_valid', 1);
         }]); // 社員マスタ
 
@@ -657,25 +666,25 @@ class TCustomer extends ModelBase
             'wedding_anniversary',
             'lat',
             'lng',
-        )->where('is_editing', 0)->with(['store' => function($q) {
+        )->where('is_editing', 0)->with(['store' => function ($q) {
             $q->select('name', 'id')->where('is_valid', 1);
         }]) // 店舗マスタ
-        ->with(['employee' => function($q) {
+        ->with(['employee' => function ($q) {
             $q->select('name', 'id')->where('is_valid', 1);
         }]) // 社員マスタ
-        ->with(['source' => function($q) {
+        ->with(['source' => function ($q) {
             $q->select('name', 'id')->where('is_valid', 1);
         }]) // 発生源マスタ
-        ->with(['customer_estimated_rank' => function($q) {
+        ->with(['customer_estimated_rank' => function ($q) {
             $q->select('name', 'id');
         }]) // 顧客見込みランクマスタ
-        ->with(['area' => function($q) {
+        ->with(['area' => function ($q) {
             $q->select('name', 'id')->where('is_valid', 1);
         }]) // エリアマスタ
-        ->with(['building' => function($q) {
+        ->with(['building' => function ($q) {
             $q->select('name', 'id')->where('is_valid', 1);
         }]) // 建物分類マスタ
-        ->with(['madori' => function($q) {
+        ->with(['madori' => function ($q) {
             $q->select('name', 'id')->where('is_valid', 1);
         }]); // 間取りマスタ
 
@@ -713,7 +722,7 @@ class TCustomer extends ModelBase
         $arr['madori_id'] = $param->input('madori');
         // 築年数
         $arr_building_age = explode("-", $param->input('building_age'));
-        $now    = Carbon::now();
+        $now = Carbon::now();
         $target = Carbon::create($arr_building_age[0], $arr_building_age[1]);
         echo "【 " . str_replace('-', '', $target->diffInYears($now)) . " 】\n";
         $arr['building_age'] = str_replace('-', '', $target->diffInYears($now));
@@ -746,17 +755,17 @@ class TCustomer extends ModelBase
                 return ["code" => '404'];
             }
 
-            if ( strcmp($customer->lat, $param->input('lat')) !== 0 || strcmp($customer->lng, $param->input('lng')) !== 0 ) {
-                //ジオコーディング重複チェック        
+            if (strcmp($customer->lat, $param->input('lat')) !== 0 || strcmp($customer->lng, $param->input('lng')) !== 0) {
+                //ジオコーディング重複チェック
                 $result = TCustomer::
-                            where('lat',$param->input('lat'))->
-                            where('lng',$param->input('lng'))->
-                            first();
+                where('lat', $param->input('lat'))->
+                where('lng', $param->input('lng'))->
+                first();
                 if (!empty($result)) {
                     return [
                         "code" => 'err_geocoding',
-                        "name" => $result -> name,
-                        "keisho" => $result -> keisho,
+                        "name" => $result->name,
+                        "keisho" => $result->keisho,
                     ];
                 }
             }
@@ -773,16 +782,16 @@ class TCustomer extends ModelBase
             //$customer->fill($arr)->save();
         } else {
 
-            //ジオコーディング重複チェック        
+            //ジオコーディング重複チェック
             $result = TCustomer::
-                        where('lat',$param->input('lat'))->
-                        where('lng',$param->input('lng'))->
-                        first();
+            where('lat', $param->input('lat'))->
+            where('lng', $param->input('lng'))->
+            first();
             if (!empty($result)) {
                 return [
                     "code" => 'err_geocoding',
-                    "name" => $result -> name,
-                    "keisho" => $result -> keisho,
+                    "name" => $result->name,
+                    "keisho" => $result->keisho,
                 ];
             }
             // 顧客TEL重複チェック
@@ -805,11 +814,11 @@ class TCustomer extends ModelBase
 
             // 入力不備フラグ更新
             $is_deficiency = 0;
-            if ( empty($customer->name) ||  empty($customer->furigana)
-                 || empty($customer->post_no) ||  empty($customer->prefecture)
-                 || empty($customer->city) ||  empty($customer->address)
-                 || empty($customer->area_id) ||  empty($customer->tel_no)
-                 ) {
+            if (empty($customer->name) || empty($customer->furigana)
+                || empty($customer->post_no) || empty($customer->prefecture)
+                || empty($customer->city) || empty($customer->address)
+                || empty($customer->area_id) || empty($customer->tel_no)
+            ) {
                 // 入力不備フラグをON
                 $is_deficiency = 1;
             }
@@ -818,8 +827,7 @@ class TCustomer extends ModelBase
 
             //コミット
             DB::commit();
-        }
-        catch (\Exception $e) {
+        } catch (\Exception $e) {
             Log::error($e->getMessage());
 
             //ロールバック
@@ -857,8 +865,7 @@ class TCustomer extends ModelBase
 
             //コミット
             DB::commit();
-        }
-        catch (\Exception $e) {
+        } catch (\Exception $e) {
             Log::error($e->getMessage());
 
             //ロールバック
@@ -888,8 +895,7 @@ class TCustomer extends ModelBase
 
             //コミット
             DB::commit();
-        }
-        catch (\Exception $e) {
+        } catch (\Exception $e) {
             Log::error($e->getMessage());
 
             //ロールバック
@@ -992,7 +998,7 @@ class TCustomer extends ModelBase
         // 築年数
         if ($param->filled('building_age')) {
             $arr_building_age = explode("-", $param->input('building_age'));
-            $now    = Carbon::now();
+            $now = Carbon::now();
             $target = Carbon::create($arr_building_age[0], $arr_building_age[1]);
             $years = $target->diffInYears($now);
 
@@ -1503,7 +1509,8 @@ class TCustomer extends ModelBase
     }
 
 
-    public static function csv_upsert($request, $is_data_migration = false){
+    public static function csv_upsert($request, $is_data_migration = false)
+    {
 
         // アップロードファイルのファイルパスを取得
         $file_path = $request->file('filedata')->path();
@@ -1536,7 +1543,7 @@ class TCustomer extends ModelBase
             }
 
 //            データ移行か？
-            if($is_data_migration){
+            if ($is_data_migration) {
 //                self::data_migration();
                 $items[$current_row]['id'] = $line[0];
                 $items[$current_row]['sales_contact'] = static::get_employee_codes()[$line[22]];// employee_cd コードから社員 IDを挿入
@@ -1560,14 +1567,14 @@ class TCustomer extends ModelBase
                 $items[$current_row]['facebook_id'] = null;
                 $items[$current_row]['twitter_id'] = null;
                 $items[$current_row]['instagram_id'] = null;
-                $items[$current_row]['rank'] = intval($line[27])+1;
+                $items[$current_row]['rank'] = intval($line[27]) + 1;
                 $items[$current_row]['rank_filter'] = null;
-                $items[$current_row]['estimated_rank'] = intval($line[44])+1;
+                $items[$current_row]['estimated_rank'] = intval($line[44]) + 1;
                 $items[$current_row]['estimated_rank_filter'] = null;
-                $items[$current_row]['source_id'] = intval($line[46])+1; //未指定分＋
-                $items[$current_row]['area_id'] = intval($line[20])+1; //未指定分＋
-                $items[$current_row]['building_category_id'] = intval($line[23])+1; //未指定分＋
-                $items[$current_row]['madori_id'] = intval($line[24])+1; //未指定分＋
+                $items[$current_row]['source_id'] = intval($line[46]) + 1; //未指定分＋
+                $items[$current_row]['area_id'] = intval($line[20]) + 1; //未指定分＋
+                $items[$current_row]['building_category_id'] = intval($line[23]) + 1; //未指定分＋
+                $items[$current_row]['madori_id'] = intval($line[24]) + 1; //未指定分＋
                 $items[$current_row]['building_age'] = intval($line[26]);
                 $items[$current_row]['completion_start_year'] = null;
                 $items[$current_row]['completion_start_month'] = null;
@@ -1583,18 +1590,18 @@ class TCustomer extends ModelBase
                 $items[$current_row]['work_times_max'] = null;
                 $items[$current_row]['tag_list'] = null;
 
-                $items[$current_row]['part_list'] = self::create_list($line,47,66);
-                $items[$current_row]['expected_part_list'] = self::create_list($line,89,108);
+                $items[$current_row]['part_list'] = self::create_list($line, 47, 66);
+                $items[$current_row]['expected_part_list'] = self::create_list($line, 89, 108);
                 $items[$current_row]['remarks'] = $line[28];
                 $items[$current_row]['memo1'] = $line[67];
                 $items[$current_row]['memo2'] = $line[68];
                 $str = null;
                 //マイカーの始まりと終わりのカラム
                 $i = 0;
-                foreach(range(77,118) as $val){
-                    if(!($val >= 87 && $val <= 108)){
+                foreach (range(77, 118) as $val) {
+                    if (!($val >= 87 && $val <= 108)) {
                         $i++;
-                        $str .= (strval(intval($line[$val]) *$i))." ";
+                        $str .= (strval(intval($line[$val]) * $i)) . " ";
                     }
                 }
                 $items[$current_row]['my_car_type'] = $str;
@@ -1613,46 +1620,47 @@ class TCustomer extends ModelBase
                 $items[$current_row]['updated_at'] = $line[29];
                 $items[$current_row]['last_updated_by'] = $line[30];
 
-                $employee = MEmployee::findOrFail($items[$current_row]['sales_contact'] ); //社員マスタから所属の店舗取得
+                $employee = MEmployee::findOrFail($items[$current_row]['sales_contact']); //社員マスタから所属の店舗取得
 //                dd($items[$current_row]['sales_contact']);
-                $items[$current_row]['sales_shop'] =  $employee->store_id;
-            }else{
+                $items[$current_row]['sales_shop'] = $employee->store_id;
+            } else {
 
-    //            行にnullがあるかチェック
+                //            行にnullがあるかチェック
                 $current_col = 0;
-                    foreach($line as $key => $val){
-                        if($val == "") {
-                              $error[] = sprintf("%d行目、%d列が空です",$current_row,$current_col);
-                        }
-                        $current_col++;
+                foreach ($line as $key => $val) {
+                    if ($val == "") {
+                        $error[] = sprintf("%d行目、%d列が空です", $current_row, $current_col);
                     }
+                    $current_col++;
+                }
 
                 // csvヘッダーをキーにして値を格納
                 $items[$current_row] = array_combine($header, $line);
-                $items[$current_row]['prefecture'] = array_search($items[$current_row]['prefecture'],ModelBase::PREFECTURE);
+                $items[$current_row]['prefecture'] = array_search($items[$current_row]['prefecture'], ModelBase::PREFECTURE);
                 $items[$current_row]['created_at'] = Carbon::now();
                 $items[$current_row]['updated_at'] = Carbon::now();
                 $items[$current_row]['last_updated_by'] = "山田孝之";
             }
 
         }
-        if($error){
+        if ($error) {
             return $error;
         }
-        foreach($items as $item){
+        foreach ($items as $item) {
             TCustomer::insert($item);
         }
     }
 
-public static function create_list($line,$start,$end){
-    $str = null;
-    $i = 0;
-    foreach(range($start,$end) as $val){
-        $i++;
-        $str .= (strval(intval($line[$val]) *$i))." ";
+    public static function create_list($line, $start, $end)
+    {
+        $str = null;
+        $i = 0;
+        foreach (range($start, $end) as $val) {
+            $i++;
+            $str .= (strval(intval($line[$val]) * $i)) . " ";
+        }
+        return $str; //連結した文字列+スペース返却
     }
-    return $str; //連結した文字列+スペース返却
-}
 
     /**
      * 顧客フリーワード検索
@@ -1689,26 +1697,134 @@ public static function create_list($line,$start,$end){
         return self::get_format_column($result, $param);
     }
 
-    public static function set_orwhere(&$query, String $keyword)
+    public static function set_orwhere(&$query, string $keyword)
     {
-        $query->where(function($_query) use ($keyword) {
+        $query->where(function ($_query) use ($keyword) {
             // 顧客名
             $_query->orWhere('name', 'like', '%' . $keyword . '%');
             // 顧客TEL
             // -を除いた数字で検索する
             $_query->orWhere(function ($q) use ($keyword) {
                 $q->whereRaw('replace(tel_no, "-", "") like ?', ['tel_no' => '%' . str_replace('-', '', $keyword) . '%']) // 電話番号
-                    ->orWhereRaw('replace(tel_no2, "-", "") like ?', ['tel_no2' => '%' . str_replace('-', '', $keyword) . '%']) // 電話番号2
-                    ->orWhereRaw('replace(tel_no3, "-", "") like ?', ['tel_no3' => '%' . str_replace('-', '', $keyword) . '%']); // 電話番号3
+                ->orWhereRaw('replace(tel_no2, "-", "") like ?', ['tel_no2' => '%' . str_replace('-', '', $keyword) . '%']) // 電話番号2
+                ->orWhereRaw('replace(tel_no3, "-", "") like ?', ['tel_no3' => '%' . str_replace('-', '', $keyword) . '%']); // 電話番号3
             });
             // 顧客住所
             $_query->orWhere(function ($q) use ($keyword) {
                 $q->orWhere('city', 'like', '%' . $keyword . '%') // 市区町村
-                    ->orWhere('address', 'like', '%' . $keyword . '%') // 地名、番地
-                    ->orWhere('building_name', 'like', '%' . $keyword . '%'); // 建物名等
+                ->orWhere('address', 'like', '%' . $keyword . '%') // 地名、番地
+                ->orWhere('building_name', 'like', '%' . $keyword . '%'); // 建物名等
             });
         });
         return;
+    }
+
+    public static function updateRank($r_param)
+    {
+
+        try {
+
+            DB::beginTransaction();
+
+//            新カラムを詰める
+            $columns = array(
+                'id',
+                'rank_koji',
+                'rank_last',
+            );
+
+            $customer = TCustomer::find($r_param['id']);
+
+            foreach ($columns as $column) {
+                if ($r_param[$column] != '') {
+                    $customer->{$column} = $r_param[$column];
+                }
+            }
+            $customer->update();
+//            dd($customer);
+
+
+            DB::commit();
+            return ["code" => ""];
+        } catch (Throwable $e) {
+            DB::rollback();
+            \Log::debug($e);
+//            トランザクションエラー
+            dd('heyhey');
+
+            return ["code" => 'rank_fail'];
+        }
+
+    }
+
+
+    public static function getCsvSearchResultList($perPage, $offset)
+    {
+        //      セッションからログインユーザーのcompany_idを取得
+        $company_id = session()->get('company_id');
+
+        // 取得項目
+        $query = DB::table('t_customers as c')
+            ->select(
+                'c.id',
+                'c.sales_contact',
+                'c.name',
+                'c.keisho',
+                'c.furigana',
+                'c.tel_no',
+                'c.mail_address',
+                'c.post_no',
+                'c.prefecture',
+                'c.city',
+                'c.address',
+                'c.building_name',
+                'c.rank_koji',
+                'c.rank_last',
+                'c.ob_flag',
+                'c.area_id',
+                'c.building_category_id',
+                'c.madori_id',
+                'c.building_age',
+                'c.remarks',
+                'c.lat',
+                'c.lng',
+                'p.completion_date',
+                'p.jyutyu_kin_all',
+//                DB::raw('SUM(p2.jyutyu_kin_all) as koji_kin'),
+                'e.name as employee_name',
+                'k.name as koji_name',
+                'l.name as last_name',
+            )->leftJoin('t_projects as p', 'c.id', 'p.customer_id')
+//            ->leftJoin('t_projects as p2',function($q){
+//                $q->on('c.id', '=','p2.customer_id')
+////                    ->select(DB::raw('SUM(p2.jyutyu_kin_all) as koji_kin'))
+//                    ->whereNull('p2.failure_date')//失注日
+//                    ->whereNotNull('p2.contract_date')//契約日
+//                    ->whereNotNull('p2.completion_date');//完工日
+//
+//            })->groupBy('c.id')
+//            ->groupBy('p2.customer_id')
+
+            ->leftJoin('m_employees as e', 'c.sales_contact', 'e.employee_cd')
+            ->leftJoin('m_customer_rank_kojis as k', 'c.rank_koji', 'k.id')
+            ->leftJoin('m_customer_rank_last_completions as l', 'c.rank_last', 'l.id')
+            ->where('c.company_id', $company_id)
+        ->skip($offset)
+        ->take($perPage);
+
+        $query2 = TCustomer::select(DB::raw('SUM(p2.jyutyu_kin_all) as koji_kin'), 'p2.customer_id')
+            ->leftjoin('t_projects as p2', function ($q) {
+                $q->on('t_customers.id', '=', 'p2.customer_id')
+                    ->whereNull('p2.failure_date')//失注日
+                    ->whereNotNull('p2.contract_date')//契約日
+                    ->whereNotNull('p2.completion_date');//完工日
+            })->groupBy('p2.customer_id');
+
+
+        $result = $query->get();
+        return $result;
+
+
     }
 }
 

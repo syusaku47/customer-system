@@ -3,24 +3,27 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use DB;
+use Throwable;
+use Auth;
+//use App\Traits\HasCompositePrimaryKey;
 
-/**
- * Class MArea<br>
- * エリアマスタ
- *
- * @package App\Models
- */
+
 class MArea extends ModelBase
 {
     use HasFactory;
+//    use HasCompositePrimaryKey;
 
     // テーブル名はクラスの複数形のスネークケース（m_areas）
-    // 主キーのデフォルト名はid
-    // 主キーはデフォルトではINT型のAuto Increment
-    // デフォルトではタイムスタンプを自動更新（created_at、updated_atを生成）
-    // デフォルトの接続データベースは .env の DB_CONNECTION の定義内容
+    // 複合キーで主キーのデフォルト名はid,company_id
+
+//    // プライマリキー設定
+//    protected $primaryKey = ['id', 'company_id'];
+//    // increment無効化
+//    public $incrementing = false;
 
     /**
      * モデルにタイムスタンプを付けるか
@@ -36,6 +39,7 @@ class MArea extends ModelBase
      */
     protected $attributes = [
         'is_valid' => 1,
+        'order' => 999,
     ];
 
     /**
@@ -44,7 +48,9 @@ class MArea extends ModelBase
      * @var string[]
      */
     protected $fillable = [
-        'store_name',
+        'company_id',
+        'internal_id',
+        'office_id',
         'name',
         'is_valid',
     ];
@@ -55,10 +61,11 @@ class MArea extends ModelBase
      * @var string[]
      */
     protected const SORT_BY_COLUMN = [
-        0 => 'id', // ID
-        1 => 'store_name', // 店舗名
-        2 => 'name', // エリア名称
-        3 => 'valid_flag', // 有効フラグ
+        0 => 'order', // 表示順
+        1 => 'internal_id', // 表示ID
+        2 => 'office_name', // 店舗名
+        3 => 'name', // エリア名称
+        4 => 'is_valid', // 有効フラグ
     ];
 
     /**
@@ -69,13 +76,21 @@ class MArea extends ModelBase
      */
     public static function search_list(Request $param)
     {
+//      セッションからログインユーザーのcompany_idを取得
+        $company_id = session()->get('company_id');
+
         // 取得項目
-        $query = MArea::select(
-            'id',
-            'store_name',
-            'name',
-            'is_valid',
-        );
+        $query = DB::table('m_areas as a')
+            ->select(
+                'a.id',
+                'a.internal_id',
+                'a.company_id',
+                's.name as office_name',
+                'a.name',
+                'a.is_valid',
+                'a.order',
+            )->leftjoin('m_stores as s', 'a.office_id', '=', 's.id')
+            ->where('a.company_id', $company_id);
 
         // 検索条件（where）
         self::set_where($query, $param);
@@ -104,8 +119,6 @@ class MArea extends ModelBase
         if ($param->input('is_muko') == 0 || !$param->input('is_muko')) {
             $query = $query->where('is_valid', 1); // 有効情報のみ
         }
-
-        return;
     }
 
     /**
@@ -133,7 +146,7 @@ class MArea extends ModelBase
     {
         if (is_null($order_column_id) || is_null($sort_id)) {
             // 未指定の場合、エリア名称の昇順
-            $query->orderBy(self::SORT_BY_COLUMN[2], ModelBase::SORT_KIND[0]);
+            $query->orderBy(self::SORT_BY_COLUMN[0], ModelBase::SORT_KIND[0]);
         } else {
             $query->orderBy(self::SORT_BY_COLUMN[$order_column_id], ModelBase::SORT_KIND[$sort_id]);
         }
@@ -152,17 +165,98 @@ class MArea extends ModelBase
     {
         $results = new Collection();
         foreach ($collection as $item) {
-            $arr = $item->toArray();
             $data = [
-                'area_id' => $arr['id'], // エリアマスタID
-                'id' => $arr['id'], // ID
-                'store_name' => $arr['store_name'], // 店舗名
-                'name' => $arr['name'], // エリア名称
-                'valid_flag' => $arr['is_valid'], // 有効フラグ
+                'id' => $item->id, // オートインクリメントID
+                'company_id' => $item->company_id, // 会社ID
+                'internal_id' => $item->internal_id, // 内部ID
+                'store_name' => $item->office_name, // 店舗名
+                'name' => $item->name, // エリア名称
+                'order' => $item->order, // 表示順
+                'valid_flag' => ($item->is_valid) ? true : false, // 有効フラグ
             ];
             $results->push($data);
         }
 
         return $results;
+    }
+
+    /**
+     * エリアマスタ情報保存（登録・更新）
+     *
+     * @param Request $param
+     * @param int|null $id
+     * @return collection
+     */
+    public static function upsert(Request $param, int $id = null)
+    {
+        try {
+//        全パラメータ取得
+            $arr = $param->all();
+
+//          セッションからログインユーザーのcompany_idを取得
+            $company_id = session()->get('company_id');
+
+            //            重複チェック
+            $tmp = MArea::where('company_id',$company_id)
+                ->where("name", $arr['area_name'])->first();
+            if (self::isRepeatName($tmp, $id)) {
+                return ["code" => 'err_name'];
+            }
+
+//            トランザクション
+            DB::beginTransaction();
+
+            if ($id) {
+                // 更新
+                $instance = MArea::find($id);
+                if (is_null($instance)) {
+                    return ["code" => '404'];
+//                    ログインユーザーのcompany_idと一致しているか
+                }elseif ($instance->company_id != $company_id){
+                    return ["code" => '403'];
+                }
+
+                $instance->name = $param->area_name;
+
+                // 更新処理
+                $instance->fill($arr)->update();
+            } else {
+
+                // 登録
+                $instance = new MArea();
+                $instance->company_id = $company_id;
+
+//                内部ID(internal_id)の最大値取得
+                $max_internal_id = MCredit::where('company_id', $company_id)->max('internal_id');
+//                internal_idの最大値+1をそれぞれDBに格納
+                $instance->internal_id = $max_internal_id ? ($max_internal_id + 1):  1;
+
+                $instance->name = $param->area_name;
+
+                // 登録処理
+                $instance->fill($arr)->save();
+            }
+            DB::commit();
+            return ["code" => ""];
+
+        } catch (Throwable $e) {
+            DB::rollback();
+//            トランザクションエラー
+            \Log::debug($e);
+            return ["code" => 'fail'];
+        }
+    }
+
+    /*
+     * 重複チェック
+     */
+    private static function isRepeatName($instance, $id)
+    {
+//        同じIDでないのは重複とみなす
+        if ($instance)
+            if ($instance->id !== $id)
+                return true;
+
+        return false;
     }
 }

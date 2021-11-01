@@ -15,8 +15,12 @@ class CreateMCreditsTable extends Migration
     {
         Schema::create('m_credits', function (Blueprint $table) {
             $table->increments('id')->comment('単位マスタID');
-            $table->string('name', 3)->nullable()->comment('名称');
+            $table->integer('company_id')->comment('会社ID');
+            $table->integer('internal_id')->comment('内部ID');
+            $table->string('name', 255)->nullable()->comment('名称');
             $table->tinyInteger('is_valid')->default(1)->nullable()->comment('有効フラグ');
+            $table->integer('order')->comment('表示順');
+            $table->unique(['company_id', 'internal_id']);
         });
     }
 

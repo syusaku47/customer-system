@@ -6,6 +6,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use DB;
+use Throwable;
+use Auth;
+//use App\Traits\HasCompositePrimaryKey;
 
 /**
  * Class MStore<br>
@@ -16,6 +20,15 @@ use Illuminate\Support\Collection;
 class MTax extends ModelBase
 {
     use HasFactory;
+//    use HasCompositePrimaryKey;
+
+    // テーブル名はクラスの複数形のスネークケース（m_taxes）
+    // 複合キーで主キーのデフォルト名はid,company_id
+
+//    // プライマリキー設定
+//    protected $primaryKey = ['id', 'company_id'];
+//    // increment無効化
+//    public $incrementing = false;
 
     /**
      * モデルにタイムスタンプを付けるか
@@ -31,6 +44,7 @@ class MTax extends ModelBase
      */
     protected $attributes = [
         'is_valid' => 1,
+        'order' => 999,
     ];
 
     /**
@@ -39,9 +53,13 @@ class MTax extends ModelBase
      * @var string[]
      */
     protected $fillable = [
+        'id',
+        'company_id',
+        'internal_id',
         'start_date',
         'tax_rate',
         'is_valid',
+        'order',
     ];
 
     /**
@@ -50,27 +68,35 @@ class MTax extends ModelBase
      * @var string[]
      */
     protected const SORT_BY_COLUMN = [
-        0 => 'start_date', // 適用開始日
-        1 => 'tax_rate', // 消費税率
-        2 => 'is_valid', // 有効フラグ
+        0 => 'order', // 表示順
+        1 => 'internal_id', // 表示ID
+        2 => 'start_date', // 適用開始日
+        3 => 'tax_rate', // 消費税率
+        4 => 'is_valid', // 有効フラグ
 
     ];
 
     /**
-     * 店舗マスタ情報一覧検索
+     * 消費税マスタ情報一覧検索
      *
      * @param Request $param 検索パラメータ
      * @return mixed 取得データ
      */
     public static function search_list(Request $param)
     {
+//      セッションからログインユーザーのcompany_idを取得
+        $company_id = session()->get('company_id');
+
         // 取得項目
         $query = MTax::select(
             'id',
+            'company_id',
+            'internal_id',
             'start_date',
             'tax_rate',
+            'order',
             'is_valid',
-        );
+        )->where('company_id', $company_id);
 
         // 検索条件（where）
         self::set_where($query, $param);
@@ -100,7 +126,6 @@ class MTax extends ModelBase
             $query = $query->where('is_valid', 1); // 有効情報のみ
         }
 
-        return;
     }
 
     /**
@@ -113,8 +138,6 @@ class MTax extends ModelBase
     public static function set_order_by(&$query, int $order_column_id, int $sort_id)
     {
         self::_set_order_by($query, $order_column_id, $sort_id);
-
-        return;
     }
 
     /**
@@ -149,10 +172,13 @@ class MTax extends ModelBase
         foreach ($collection as $item) {
             $arr = $item->toArray();
             $data = [
-                'tax_id' => $arr['id'], // 消費税マスタID
-                'id' => $arr['id'], // ID
+                'id' => $arr['id'], // オートインクリメントID
+                'company_id' => $arr['company_id'], // 会社ID
+                'internal_id' => $arr['internal_id'], // 内部ID
+//                'tax_id' => $arr['id'], // 消費税マスタID
                 'start_date' => static::date_conversion($arr['start_date']), // 適用開始日
                 'tax_rate' => $arr['tax_rate'], // 消費税率
+                'order' => $arr['order'], // 表示順
                 'valid_flag' => ($arr['is_valid']) ? true : false, // 有効フラグ
 
             ];
@@ -173,28 +199,113 @@ class MTax extends ModelBase
     }
 
     /**
-     * 消費税情報保存（登録・更新）
+     * 消費税マスタ情報保存（登録・更新）
      *
      * @param Request $param
      * @param int|null $id
      * @return collection
      */
-    public static function upsert(Request $param, int $id = null): Collection
+    public static function upsert(Request $param, int $id = null)
     {
-        $arr = $param->all();
 
-        if ($id) {
-            // 更新
-            $tax = MTax::findOrFail($id);
+        try {
+//        全パラメータ取得
+            $arr = $param->all();
 
-            // 更新処理
-            $tax->fill($arr)->update();
-        } else {
-            // 登録処理
-            $tax = new MTax();
-            $tax->fill($arr)->save();
+//          セッションからログインユーザーのcompany_idを取得
+            $company_id = session()->get('company_id');
+
+            //            重複チェック
+            $tmp = MTax::where('company_id',$company_id)
+                ->where("start_date", $arr['start_date'])->first();
+            if (self::isRepeatName($tmp, $id)) {
+                return ["code" => 'err_name'];
+            }
+
+//            トランザクション
+            DB::beginTransaction();
+
+            if ($id) {
+                // 更新
+                $instance = MTax::find($id);
+                if (is_null($instance)) {
+                    return ["code" => '404'];
+//                    ログインユーザーのcompany_idと一致しているか
+                }elseif ($instance->company_id != $company_id){
+                    return ["code" => '403'];
+                }
+
+                // 更新処理
+                $instance->fill($arr)->update();
+            } else {
+
+                // 登録
+                $instance = new MTax();
+                $instance->company_id = $company_id;
+
+//                内部ID(internal_id)の最大値取得
+                $max_internal_id = MTax::where('company_id', $company_id)->max('internal_id');
+
+//                    internal_idの最大値+1をそれぞれDBに格納
+                $instance->internal_id = $max_internal_id ? ($max_internal_id + 1):  1;
+
+                // 登録処理
+                $instance->fill($arr)->save();
+            }
+            DB::commit();
+            return ["code" => ""];
+
+        } catch (Throwable $e) {
+            DB::rollback();
+            \Log::debug($e);
+//            トランザクションエラー
+            return ["code" => 'fail'];
+        }
+    }
+
+    /**
+     * 直近の有効消費税マスタ取得
+     *
+     * @param Request $param 検索パラメータ
+     * @return mixed 取得データ
+     */
+    public static function search_soon(Request $param)
+    {
+//      セッションからログインユーザーのcompany_idを取得
+        $company_id = session()->get('company_id');
+
+//        適用開始日の最大値取得
+        $max_start_date = MTax::where('company_id', $company_id)
+        ->where('is_valid', 1)
+        ->where('start_date', '<=' ,$param->start_date)
+        ->max('start_date');
+
+//        適用開始日の最大値からレコード取得
+        $query = MTax::where('start_date',$max_start_date);
+        $result = $query->get();
+
+        if (!$result->count()) {
+            return ["code" => '404'];
         }
 
-        return $tax;
+        // 取得結果整形
+        return self::get_format_column($result);
+    }
+
+
+    /**
+     * 重複チェック
+     * @param $instance
+     * @param int|null $id
+     * @return boolean
+     */
+    private static function isRepeatName($instance, $id)
+    {
+//        同じIDでないのは重複とみなす
+        if ($instance)
+            if ($instance->id !== $id)
+                return true;
+
+        return false;
     }
 }

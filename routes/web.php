@@ -21,9 +21,9 @@ use App\Http\Controllers\CookieAuthenticationController;
 
 
 
-Route::post('api/auth/login', [CookieAuthenticationController::class, 'login']);
-Route::post('api/auth/logout', [CookieAuthenticationController::class, 'logout']);
-Route::get('api/auth/unauthenticated', [CookieAuthenticationController::class, 'unauthenticated'])->name('unauthenticated');
+//Route::post('api/auth/login', [CookieAuthenticationController::class, 'login']);
+//Route::post('api/auth/logout', [CookieAuthenticationController::class, 'logout']);
+//Route::get('api/auth/unauthenticated', [CookieAuthenticationController::class, 'unauthenticated'])->name('unauthenticated');
 
 
 Route::get('{path?}', 'Controller@action')->where('path', '.*');
@@ -31,3 +31,7 @@ Route::get('{path?}', 'Controller@action')->where('path', '.*');
 
 
 
+
+
+
+Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');

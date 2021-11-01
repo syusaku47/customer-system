@@ -98,4 +98,5 @@ class Controller extends BaseController
         Log::error("TRACE\t:\r\n".$e->getTraceAsString());
         Log::error("************************************************************************");
     }
+
 }

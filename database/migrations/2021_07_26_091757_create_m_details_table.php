@@ -15,16 +15,27 @@ class CreateMDetailsTable extends Migration
     {
         Schema::create('m_details', function (Blueprint $table) {
             $table->increments('id')->comment('明細マスタID');
-            $table->string('product_kubun', 30)->nullable()->comment('商品区分');
-            $table->string('category_name', 30)->nullable()->comment('大分類名称');
-            $table->string('subcategory_name', 30)->nullable()->comment('中分類名称');
-            $table->string('name', 30)->nullable()->comment('名称');
-            $table->string('standard', 30)->nullable()->comment('規格');
-            $table->integer('quantity')->nullable()->comment('数量');
-            $table->string('credit_name', 30)->nullable()->comment('単位名称');
-            $table->decimal('quote_unit_price',20, 2)->nullable()->comment('見積単価');
-            $table->decimal('prime_cost',20, 2)->nullable()->comment('原価');
-            $table->tinyInteger('is_valid')->default(1)->nullable()->comment('有効フラグ');
+            $table->integer('company_id')->comment('会社ID');
+            $table->integer('internal_id')->comment('内部ID');
+            $table->string('shohin_cd', 15)->comment('商品CD');
+            $table->integer('shohin_kubun')->comment('商品区分');
+            $table->integer('daibunrui_id')->comment('大分類');
+            $table->integer('tyubunrui_id')->comment('中分類');
+            $table->string('name', 255)->comment('名称');
+            $table->string('kikaku', 255)->nullable()->comment('規格');
+            $table->decimal('suryou',12,2)->nullable()->default(0.0)->comment('数量');
+            $table->integer('tani_id')->nullable()->default(0)->comment('単位');
+            $table->decimal('genka',12, 2)->nullable()->default(0.0)->comment('原価');
+            $table->decimal('shikiri_kakaku',12, 2)->nullable()->default(0.0)->comment('見積単価');
+            $table->decimal('shohizeigaku',12, 2)->nullable()->default(0.0)->comment('消費税額');
+            $table->integer('shiiresaki_id')->nullable()->default(0)->comment('仕入先id');
+            $table->tinyInteger('valid_flag')->default(1)->nullable()->comment('有効フラグ');
+            $table->string('filename', 255)->nullable()->comment('ファイル名');
+            $table->string('server_filename', 255)->nullable()->comment('サーバファイル名');
+            $table->string('extension', 4)->nullable()->comment('形式');
+            $table->integer('order')->comment('表示順');
+            $table->unique(['company_id', 'internal_id']);
+
         });
     }
 

@@ -6,6 +6,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use DB;
+use Throwable;
+use Auth;
+use App\Traits\HasCompositePrimaryKey;
 
 /**
  * Class MStore<br>
@@ -16,12 +20,16 @@ use Illuminate\Support\Collection;
 class MStore extends ModelBase
 {
     use HasFactory;
+    use HasCompositePrimaryKey;
+
 
     // テーブル名はクラスの複数形のスネークケース（m_Stores）
-    // 主キーのデフォルト名はid
-    // 主キーはデフォルトではINT型のAuto Increment
-    // デフォルトではタイムスタンプを自動更新（created_at、updated_atを生成）
-    // デフォルトの接続データベースは .env の DB_CONNECTION の定義内容
+    // 複合キーで主キーのデフォルト名はid,company_id
+
+    // プライマリキー設定
+    protected $primaryKey = ['id', 'company_id'];
+    // increment無効化
+    public $incrementing = false;
 
     /**
      * モデルにタイムスタンプを付けるか
@@ -37,6 +45,8 @@ class MStore extends ModelBase
      */
     protected $attributes = [
         'is_valid' => 1,
+        'order' => 999,
+
     ];
 
     /**
@@ -45,6 +55,8 @@ class MStore extends ModelBase
      * @var string[]
      */
     protected $fillable = [
+        'id',
+        'company_id',
         'name',
         'short_name',
         'furigana',
@@ -57,11 +69,40 @@ class MStore extends ModelBase
         'building_name',
         'is_valid',
         'free_dial',
+        'holder',
+
         'bank_name',
         'bank_account_no',
-        'holder',
-        'bank_account',
+        'bank_store_name',
+        'account',
+
+        'bank_name2',
+        'bank_account_no2',
+        'bank_store_name2',
+        'account2',
+
+        'bank_name3',
+        'bank_account_no3',
+        'bank_store_name3',
+        'account3',
+
+        'bank_name4',
+        'bank_account_no4',
+        'bank_store_name4',
+        'account4',
+
+        'bank_name5',
+        'bank_account_no5',
+        'bank_store_name5',
+        'account5',
+
+        'bank_name6',
+        'bank_account_no6',
+        'bank_store_name6',
+        'account6',
+
         'logo',
+        'order',
     ];
 
     /**
@@ -70,18 +111,21 @@ class MStore extends ModelBase
      * @var string[]
      */
     protected const SORT_BY_COLUMN = [
-        0 => 'name', // 店舗_名称
-        1 => 'short_name', // 店舗_略称
-        2 => 'furigana', // 店舗_フリガナ
-        3 => 'tel_no', // 電話番号
-        4 => 'fax_no', // FAX番号
-        5 => 'post_no', // 郵便番号
-        6 => 'prefecture', // 住所_都道府県
-        7 => 'city', // 住所_市区町村
-        8 => 'address', // 住所_地名・番地
-        9 => 'building_name', // 住所_建築名等
-        10 => 'is_valid', // 有効フラグ
-        11 => 'free_dial', // フリーダイヤル
+
+        0 => 'order', // 操作（表示順）
+        1 => 'name', // 店舗_名称
+        2 => 'short_name', // 店舗_略称
+        3 => 'furigana', // 店舗_フリガナ
+        4 => 'tel_no', // 電話番号
+        5 => 'fax_no', // FAX番号
+        6 => 'post_no', // 郵便番号
+        7 => 'prefecture', // 住所_都道府県
+        8 => 'city', // 住所_市区町村
+        9 => 'address', // 住所_地名・番地
+        10 => 'building_name', // 住所_建築名等
+        11 => 'is_valid', // 有効フラグ
+        12 => 'free_dial', // フリーダイヤル
+        13 => 'holder', // 口座名義
     ];
 
     /**
@@ -92,23 +136,59 @@ class MStore extends ModelBase
      */
     public static function search_list(Request $param)
     {
+
+//      セッションからログインユーザーのcompany_idを取得
+        $company_id = session()->get('company_id');
+
         // 取得項目
-        $query = MStore::select(
-            'id',
-            'name',
-            'short_name',
-            'furigana',
-            'tel_no',
-            'fax_no',
-            'post_no',
-            'prefecture',
-            'city',
-            'address',
-            'building_name',
-            'is_valid',
-            'free_dial',
-            'logo',
-        );
+        $query = DB::table('m_stores as s')
+            ->select(
+            's.company_id',
+            's.id',
+            's.name',
+            's.short_name',
+            's.furigana',
+            's.tel_no',
+            's.fax_no',
+            's.post_no',
+            's.prefecture',
+            's.city',
+            's.address',
+            's.building_name',
+            's.is_valid',
+            's.free_dial',
+            's.logo',
+            's.order',
+            's.jisx0401_code',
+            's.jisx0402_code',
+            's.holder',
+            's.bank_name',
+            's.bank_store_name',
+            's.account',
+            's.bank_account_no',
+            's.bank_name2',
+            's.bank_store_name2',
+            's.account2',
+            's.bank_account_no2',
+            's.bank_name3',
+            's.bank_store_name3',
+            's.account3',
+            's.bank_account_no3',
+            's.bank_name4',
+            's.bank_store_name4',
+            's.account4',
+            's.bank_account_no4',
+            's.bank_name5',
+            's.bank_store_name5',
+            's.account5',
+            's.bank_account_no5',
+            's.bank_name6',
+            's.bank_store_name6',
+            's.account6',
+            's.bank_account_no6',
+            'c.name as company_name',
+        )->leftjoin('m_contract_companies as c', 's.company_id', '=', 'c.id')
+            ->where('company_id', $company_id);
 
         // 検索条件（where）
         self::set_where($query, $param);
@@ -124,64 +204,7 @@ class MStore extends ModelBase
         return self::get_format_column($result);
     }
 
-    /**
-     * 店舗マスタ情報1件取得
-     * @param int $id //店舗マスタID
-     * @return array|null
-     */
-    public static function search_one(int $id): ?array
-    {
-        // 取得項目
-        $query = MStore::select(
-            'id',
-            'name',
-            'short_name',
-            'furigana',
-            'tel_no',
-            'fax_no',
-            'post_no',
-            'prefecture',
-            'city',
-            'address',
-            'building_name',
-            'is_valid',
-            'free_dial',
-            'logo',
-        )->where('id', $id);
-        $result = $query->firstOrFail();
-        if (is_null($result)) {
-            return null;
-        }
 
-        // 取得結果整形
-        return self::get_format_column_one($result);
-    }
-
-    /**
-     * @param $obj
-     * @return array|null
-     */
-    private static function get_format_column_one($obj): ?array
-    {
-        $data[] = [
-            'id' => $obj->id, // 店舗マスタID
-            'name' => $obj->name, // 名称
-            'furigana'=> $obj->furigana,
-            'short_name' => $obj->short_name,
-            'tel_no' => $obj->tel_no,
-            'fax_no' => $obj->fax_no,
-            'post_no' => $obj->post_no,
-            'prefecture' => $obj->prefecture,
-            'city' => $obj->city,
-            'address' => $obj->address,
-            'building_name' => $obj->building_name,
-            'valid_flag' => $obj->is_valid,
-            'free_dial' => $obj->free_dial,
-            'logo' => $obj->logo,
-        ];
-
-        return $data;
-    }
 
     /**
      * 検索条件設定
@@ -194,7 +217,7 @@ class MStore extends ModelBase
         // マスタ管理用
         // 無効情報も含む
         if ($param->input('is_muko') == 0 || !$param->input('is_muko')) {
-            $query = $query->where('is_valid', 1); // 有効情報のみ
+            $query = $query->where('s.is_valid', 1); // 有効情報のみ
         }
 
         return;
@@ -244,54 +267,177 @@ class MStore extends ModelBase
     {
         $results = new Collection();
         foreach ($collection as $item) {
-            $arr = $item->toArray();
             $data = [
-                'id' => $arr['id'], // 店舗マスタID
-                'name' => $arr['name'], // 名称
-                'short_name' => $arr['short_name'], // 略称
-                'furigana' => $arr['furigana'], // フリガナ
-                'tel_no' => $arr['tel_no'], // 電話番号
-                'fax_no' => $arr['fax_no'], // FAX番号
-                'post_no' => $arr['post_no'], // 郵便番号
-                'prefecture' => $arr['prefecture'], // 都道府県
-                'city' => $arr['city'], // 市区町村
-                'address' => $arr['address'], // 地名・番地
-                'building_name' => $arr['building_name'], // 建築名等
-                'valid_flag' => $arr['is_valid'], // 有効フラグ
-                'free_dial' => $arr['free_dial'], // フリーダイヤル
-                'logo' => $arr['logo'], // ロゴ
+                'id' => $item->id, // 店舗マスタID
+                'name' => $item->name, // 名称
+                'short_name' => $item->short_name, // 略称
+                'furigana' => $item->furigana, // フリガナ
+                'tel_no' => $item->tel_no, // 電話番号
+                'fax_no' => $item->fax_no, // FAX番号
+                'post_no' => $item->post_no, // 郵便番号
+                'prefecture' => ModelBase::PREFECTURE[$item->prefecture], // 都道府県
+                'city' => $item->city, // 市区町村
+                'address' => $item->address, // 地名・番地
+                'building_name' => $item->building_name, // 建築名等
+                'valid_flag' => $item->is_valid, // 有効フラグ
+                'free_dial' => $item->free_dial, // フリーダイヤル
+                'logo' => $item->logo, // ロゴ
+                'order' => $item->order, // 表示順
+                'jisx0401_code'  => $item->jisx0401_code ,//JISX0401コード
+                'jisx0402_code'  => $item-> jisx0402_code,//JISX0402コード
+                'holder'  => $item-> holder,//口座名義
+                'bank_name'  => $item-> bank_name,//銀行名
+                'bank_store_name'  => $item-> bank_store_name,//店舗名(銀行)
+                'account'  => $item-> account,//口座
+                'bank_account_no'  => $item-> bank_account_no,//口座番号
+                'company_name'  => $item->company_name ,//会社名
             ];
+//            2~6までの銀行情報
+            for ($i=2; $i<7; $i++) {
+                $rules['bank_name'.$i] =  $item->{'bank_name'.$i};//銀行名;
+                $rules['bank_store_name'.$i] = $item->{'bank_store_name'.$i};//店舗名(銀行)
+                $rules['account'.$i] =  $item->{'account'.$i};//口座
+                $rules['bank_account_no'.$i] =  $item->{'bank_account_no'.$i};//口座番号
+            }
             $results->push($data);
         }
 
         return $results;
     }
-
+/*---------------------------------------------------------------------------------------------*/
     /**
-     * @param $request
-     * @return mixed
+     * 消費税マスタ情報保存（登録・更新）
+     *
+     * @param Request $param
+     * @param int|null $id
+     * @return collection
      */
-    public static function create_data($request)
+    public static function upsert(Request $param, int $id = null)
     {
-        $store = new MStore();
-        $store->fill($request->all())->save();
 
-        return $store;
+        try {
+//        全パラメータ取得
+            $arr = $param->all();
+
+//          セッションからログインユーザーのcompany_idを取得
+            $company_id = session()->get('company_id');
+
+            //            重複チェック
+            $tmp = MStore::where('company_id',$company_id)
+                ->where("name", $arr['name'])->first();
+            if (self::isRepeatName($tmp, $id)) {
+                return ["code" => 'err_name'];
+            }
+
+//            トランザクション
+            DB::beginTransaction();
+
+            if ($id) {
+                // 更新
+                $instance = MStore::find(['id' => $id, 'company_id' => $company_id]);
+                if (is_null($instance)) {
+                    return ["code" => '404'];
+                }
+
+                // 更新処理
+                $instance->fill($arr)->update();
+            } else {
+
+                // 登録
+                $instance = new MStore();
+                $instance->company_id = $company_id;
+
+//                    idの最大値+1をそれぞれDBに格納
+                $instance->id = MStore::max('id') + 1;
+
+                // 登録処理
+                $instance->fill($arr)->save();
+            }
+            DB::commit();
+            return ["code" => ""];
+
+        } catch (Throwable $e) {
+            DB::rollback();
+//            トランザクションエラー
+            \Log::debug($e);
+            return ["code" => 'fail'];
+        }
     }
 
     /**
-     * @param $request
-     * @param $id
-     * @return mixed
+     * 重複チェック
+     * @param $instance
+     * @param int|null $id
+     * @return boolean
      */
-    public static function update_data($request, $id)
+    private static function isRepeatName($instance, $id)
     {
-        $store = MStore::findOrFail($id);
-        $store->update($request->all());
+//        同じIDでないのは重複とみなす
+        if ($instance)
+            if ($instance->id !== $id)
+                return true;
 
-        return $store;
+        return false;
     }
 
 
+    //    /**
+//     * 店舗マスタ情報1件取得
+//     * @param int $id //店舗マスタID
+//     * @return array|null
+//     */
+//    public static function search_one(int $id): ?array
+//    {
+//        // 取得項目
+//        $query = MStore::select(
+//            'id',
+//            'name',
+//            'short_name',
+//            'furigana',
+//            'tel_no',
+//            'fax_no',
+//            'post_no',
+//            'prefecture',
+//            'city',
+//            'address',
+//            'building_name',
+//            'is_valid',
+//            'free_dial',
+//            'logo',
+//        )->where('id', $id);
+//        $result = $query->firstOrFail();
+//        if (is_null($result)) {
+//            return null;
+//        }
+//
+//        // 取得結果整形
+//        return self::get_format_column_one($result);
+//    }
+
+//    /**
+//     * @param $obj
+//     * @return array|null
+//     */
+//    private static function get_format_column_one($obj): ?array
+//    {
+//        $data[] = [
+//            'id' => $obj->id, // 店舗マスタID
+//            'name' => $obj->name, // 名称
+//            'furigana'=> $obj->furigana,
+//            'short_name' => $obj->short_name,
+//            'tel_no' => $obj->tel_no,
+//            'fax_no' => $obj->fax_no,
+//            'post_no' => $obj->post_no,
+//            'prefecture' => $obj->prefecture,
+//            'city' => $obj->city,
+//            'address' => $obj->address,
+//            'building_name' => $obj->building_name,
+//            'valid_flag' => $obj->is_valid,
+//            'free_dial' => $obj->free_dial,
+//            'logo' => $obj->logo,
+//        ];
+//
+//        return $data;
+//    }
 
 }

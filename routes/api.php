@@ -13,9 +13,17 @@ use App\Models\MEmployee;
 |
 */
 
-Route::group(['middleware' => ['auth:sanctum']], function () {
-    Route::get('auth/me', MeController::class);
+//Auth::routes();
+Route::group(['prefix' => 'auth', 'namespace' => 'Auth'], function() {
+    Route::post("login", 'LoginController@login');
+    Route::post("logout", 'LoginController@logout');
 });
+
+
+Route::group(['prefix' => 'auth', 'middleware' => 'auth:api', 'namespace' => 'Auth'], function(){
+    Route::get('me', 'MeController@me');
+});
+
 
 //Route::prefix('api')->middleware(["middleware" => "api"])->group(function () {
 //
@@ -26,8 +34,8 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
 
 
-//Route::group(['middleware' => ['auth:sanctum']], function () {
-    Route::group(['middleware' => 'api', 'namespace' => 'Api'], function(){
+//Route::group(['middleware' => ['auth:api']], function () {
+    Route::group(['middleware' => 'auth:api', 'namespace' => 'Api'], function(){
         // 共通パスワード変更
         Route::group(['prefix' => 'common'], function() {
             Route::post("/chgpassword", 'ChangePasswordController@changePassword');
@@ -114,7 +122,14 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
         Route::get('file/{id}/download', 'FilesController@download');
 
         // マスタ管理
-        Route::group(['prefix' => 'master'], function(){
+        Route::group(['prefix' => 'master','namespace' => 'Master'], function(){
+            Route::group(['prefix' => 'contract'], function(
+            ){
+                // 契約会社マスタ
+                // 取得・登録・更新
+                Route::match('post', 'contractcompany/{id}', 'MContractCompanyController@update'); // POSTでも末尾のルートパラメータを受け取れるようにする
+                Route::apiResource('contractcompany', 'MContractCompanyController');
+            });
             Route::group(['prefix' => 'company'], function(){
                 // 店舗マスタ
                 // 取得・登録・更新
@@ -126,6 +141,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
                 Route::apiResource('employee', 'MEmployeesController');
                 // 消費税マスタ
                 // 取得・登録・更新
+                Route::match('get', 'tax/soon', 'MTaxesController@getOneSoon');
                 Route::match('post', 'tax/{id}', 'MTaxesController@update'); // POSTでも末尾のルートパラメータを受け取れるようにする
                 Route::apiResource('tax', 'MTaxesController');
             });
@@ -194,8 +210,17 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
             Route::group(['prefix' => 'rank'], function(){
                 // 顧客見込みランクマスタ
                 // 取得・登録・更新
-                Route::match('post', 'customerestimated/{id}', 'MCustomerEstimatedRanksController@update'); // POSTでも末尾のルートパラメータを受け取れるようにする
-                Route::apiResource('customerestimated', 'MCustomerEstimatedRanksController');
+                Route::match('post', 'customerexrank/{id}', 'MCustomerEstimatedRanksController@update'); // POSTでも末尾のルートパラメータを受け取れるようにする
+                Route::apiResource('customerexrank ', 'MCustomerEstimatedRanksController');
+                // 顧客ランクマスタ(工事金額)
+                // 取得・登録・更新
+                Route::match('post', 'customerkoji/{id}', 'MCustomerRankKojisController@update'); // POSTでも末尾のルートパラメータを受け取れるようにする
+                Route::apiResource('customerkoji ', 'MCustomerRankKojisController');
+                // 顧客ランクマスタ(最終完工日)
+                // 取得・登録・更新
+                Route::match('post', 'customerlast/{id}', 'MCustomerRankLastCompletionsController@update'); // POSTでも末尾のルートパラメータを受け取れるようにする
+                Route::apiResource('customerlast ', 'MCustomerRankLastCompletionsController');
+
                 // 案件ランクマスタ
                 // 取得・登録・更新
                 Route::match('post', 'project/{id}', 'MProjectRanksController@update'); // POSTでも末尾のルートパラメータを受け取れるようにする
@@ -204,48 +229,33 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
                 // 取得・登録・更新
                 Route::match('post', 'customer/{id}', 'MCustomerRanksController@update'); // POSTでも末尾のルートパラメータを受け取れるようにする
                 Route::apiResource('customer', 'MCustomerRanksController');
-            });
-            Route::group(['prefix' => 'maintenance'], function(){
-                // メンテナンスマスタ
-                // 取得・登録・更新
-                Route::match('post', 'aftermaintenance/{id}', 'MAfterMaintenancesController@update'); // POSTでも末尾のルートパラメータを受け取れるようにする
-                Route::apiResource('aftermaintenance', 'MAfterMaintenancesController');
-            });
-            Route::group(['prefix' => 'fixed'], function(){
-                // メンテナンスマスタ
-                // 取得・登録・更新
-                Route::match('post', 'quotefixed/{id}', 'MQuotefixsController@update'); // POSTでも末尾のルートパラメータを受け取れるようにする
-                Route::apiResource('quotefixed', 'MQuotefixsController');
-                // 現場準備確認項目マスタ
-                // 取得・登録・更新
-                Route::match('post', 'fieldconfirmitem/{id}', 'MFieldConfirmItemsController@update'); // POSTでも末尾のルートパラメータを受け取れるようにする
-                Route::apiResource('fieldconfirmitem', 'MFieldConfirmItemsController');
-                // 工事確認項目マスタ
-                // 取得・登録・更新
-                Route::match('post', 'kojiconfirmitem/{id}', 'MKojiConfirmItemsController@update'); // POSTでも末尾のルートパラメータを受け取れるようにする
-                Route::apiResource('kojiconfirmitem', 'MKojiConfirmItemsController');
-                // 署名マスタ
-                // 取得・登録・更新
-                Route::match('post', 'signature/{id}', 'MSignaturesController@update'); // POSTでも末尾のルートパラメータを受け取れるようにする
-                Route::apiResource('signature', 'MSignaturesController');
-            });
-            Route::group(['prefix' => 'customer'], function(){
-                // CSVインポート
-                Route::post('upload/csv', 'CustomersController@import_csv');
 
-                // CSVダウンロード
-                Route::get('template/download', 'CustomersController@download_templete_csv');
-
-
-
-                // CSVダウンロード
-                Route::get('template/download', 'CustomersController@download_templete_csv');
-
-    //            本番顧客データ移行用
-                Route::post('data/migration', 'CustomersController@import_csv_prod');
-
+                // 顧客ランク自動更新
+                Route::get( 'custrankupdate', 'MCustomerRanksController@rank_update');
 
             });
+
+                // 見積定型、署名マスタ
+                // 取得・登録・更新
+                Route::match('post', 'fixed/{id}', 'MtbXmlController@update'); // POSTでも末尾のルートパラメータを受け取れるようにする
+                Route::apiResource('fixed', 'MtbXmlController');
+//            Route::group(['prefix' => 'customer'], function(){
+//                // CSVインポート
+//                Route::post('upload/csv', 'CustomersController@import_csv');
+//
+//                // CSVダウンロード
+//                Route::get('template/download', 'CustomersController@download_templete_csv');
+//
+//
+//
+//                // CSVダウンロード
+//                Route::get('template/download', 'CustomersController@download_templete_csv');
+//
+//    //            本番顧客データ移行用
+//                Route::post('data/migration', 'CustomersController@import_csv_prod');
+//
+//
+//            });
         });
 
         // 見積管理

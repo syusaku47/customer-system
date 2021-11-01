@@ -3,8 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use DB;
+use Throwable;
+use Auth;
 
 /**
  * Class TCustomerRankLog<br>
@@ -19,8 +23,13 @@ class TCustomerRankLog extends ModelBase
     // テーブル名はクラスの複数形のスネークケース（t_customer_rank_logs）
     // 主キーのデフォルト名はid
     // 主キーはデフォルトではINT型のAuto Increment
-    // デフォルトではタイムスタンプを自動更新（created_at、updated_atを生成）
-    // デフォルトの接続データベースは .env の DB_CONNECTION の定義内容
+    // company_id, internal_idはユニークキー
+
+    /* モデルにタイムスタンプを付けるか
+*
+* @var bool
+     */
+    public $timestamps = false;
 
     /**
      * ホワイトリスト
@@ -28,6 +37,8 @@ class TCustomerRankLog extends ModelBase
      * @var string[]
      */
     protected $fillable = [
+        'internal_id',
+        'company_id',
         'customer_id',
         'customer_name',
         'sales_contact',
@@ -505,5 +516,62 @@ class TCustomerRankLog extends ModelBase
         }
 
         return $results;
+    }
+
+    /**
+     *  顧客ランクログデータ新規登録
+     *
+     * @access public
+     * @param collection $instance 連想配列
+     */
+    public static function addRankLog($l_param)
+    {
+        try {
+
+            DB::beginTransaction();
+
+//            新カラムを詰める
+            $columns = array(
+                'customer_id',
+                'customer_name',
+                'sales_contact',
+                'customer_rank_before_change',
+                'customer_rank_after_change',
+                'total_work_price',
+                'total_work_times',
+                'last_completion_date',
+                'updated_date',
+            );
+
+            $rank_log = new TCustomerRankLog();
+
+//          セッションからログインユーザーのcompany_idを取得
+            $company_id = session()->get('company_id');
+
+            $rank_log->company_id = $company_id;
+
+            //                内部ID(internal_id)の最大値取得
+            $max_internal_id = TCustomerRankLog::where('company_id', $company_id)->max('internal_id');
+
+//                    internal_idの最大値+1をそれぞれDBに格納
+            $rank_log->internal_id = $max_internal_id ? ($max_internal_id + 1) : 1;
+
+            foreach($columns as $column) {
+                if($l_param[$column] != ''){
+                    $rank_log->{$column} = $l_param[$column];
+                }
+            }
+
+            $rank_log->save();
+            DB::commit();
+            return ["code" => ""];
+        } catch (Throwable $e) {
+            DB::rollback();
+            \Log::debug($e);
+//            トランザクションエラー
+
+            return ["code" => 'fail'];
+        }
+
     }
 }

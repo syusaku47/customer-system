@@ -15,12 +15,26 @@ class MTaxesTableSeeder extends Seeder
      */
     public function run()
     {
-        $dataTime = new Carbon("2020-07-21");
+        $dataTime = new Carbon("2020-10-19");
 
-        foreach ( range(1,9) as $val ){
+        foreach ( range(1,9) as $i ){
             DB::table('m_taxes')->insert([
-                'start_date' => $dataTime->addDays($val),//現在の時間
+                'internal_id' => $i + 1,
+                'company_id' => 1,
+                'start_date' => $dataTime->addDays($i),//現在の時間
                 'tax_rate' => mt_rand() / mt_getrandmax() * 5,//0から5までの小数乱数
+                'order' => rand(1,999),
+                'is_valid' => rand( 0,1 ), // 0:無効 1:有効
+            ]);
+        }
+
+        foreach ( range(1,9) as $i ){
+            DB::table('m_taxes')->insert([
+                'internal_id' => $i + 1,
+                'company_id' => 2,
+                'start_date' => $dataTime->addDays($i),//現在の時間
+                'tax_rate' => mt_rand() / mt_getrandmax() * 5,//0から5までの小数乱数
+                'order' => rand(1,999),
                 'is_valid' => rand( 0,1 ), // 0:無効 1:有効
             ]);
         }

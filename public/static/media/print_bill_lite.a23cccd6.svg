@@ -1,0 +1,172 @@
+<svg id="レイヤー_1" data-name="レイヤー 1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="595.22" height="842" viewBox="0 0 595.22 842">
+  <style>text{font-family: IPA Mincho, IPAMincho, MS-PMincho, MS PMincho, IPA Gothic, IPAGothic;}</style>
+  <rect width="595.22" height="842" style="fill: #fff"/>
+  <rect x="36.22" y="237.435" width="522" height="35.52" style="fill: #ddd"/>
+  <line x1="36.7" y1="169.575" x2="316.72" y2="169.575" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+  <line x1="36.7" y1="124.875" x2="316.72" y2="124.875" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+  <text transform="translate(240, 69.5)" font-size="28" fill="#000" font-weight="bold">ご請求書</text>
+  <text transform="translate(349.12 172.335)"  font-size="10">〒</text>
+  <g transform="translate(378 222)">
+    <text transform="translate(-30 0)" font-size="10">お客様</text>
+    <text transform="translate(0, 0)" font-size="10">フ</text>
+    <text transform="translate(8.6, 0)" font-size="10">リ</text>
+    <text transform="translate(17.2, 0)" font-size="10">ー</text>
+    <text transform="translate(26, 0)" font-size="10">ダ</text>
+    <text transform="translate(35, 0)" font-size="10">イ</text>
+    <text transform="translate(43, 0)" font-size="10">ヤ</text>
+    <text transform="translate(51.6, 0)" font-size="10">ル</text>
+    <text transform="translate(60.2, 0)" font-size="10">：</text>
+  </g>
+  <text transform="translate(349 210)" font-size="10">FAX：</text>
+  <g transform="translate(349 198)">
+    <text transform="translate(0, 0)" font-size="10">T</text>
+    <text transform="translate(5.5, 0)" font-size="10">E</text>
+    <text transform="translate(12, 0)" font-size="10">L</text>
+    <text transform="translate(19, 0)" font-size="10">: </text>
+  </g>
+  <line x1="36.744" y1="662.235" x2="126.744" y2="662.235" style="fill: none;stroke: #000;stroke-linecap: square;stroke-linejoin: round;stroke-width: 1px"/>
+  <line x1="189.617" y1="662.235" x2="279.617" y2="662.235" style="fill: none;stroke: #000;stroke-linecap: square;stroke-linejoin: round;stroke-width: 1px"/>
+  <text transform="translate(39, 100)" font-size="9.5" fill="#000">&lt;お客様名&gt;</text>
+  <text transform="translate(42, 150)" font-size="9.5" fill="#000">&lt;工事名&gt;</text>
+  <g transform="translate(50, 211)">
+    <text transform="translate(24, 0)" font-size="12" fill="#000" font-weight="bold">ありがとうございました。</text>
+    <g transform="translate(0, 16)">
+      <text transform="translate(0, 0)" font-size="12" fill="#000" font-weight="bold">下</text>
+      <text transform="translate(12.1, 0)" font-size="12" fill="#000" font-weight="bold">記</text>
+      <text transform="translate(24.2, 0)" font-size="12" fill="#000" font-weight="bold">の</text>
+      <text transform="translate(36.3, 0)" font-size="12" fill="#000" font-weight="bold">と</text>
+      <text transform="translate(48.4, 0)" font-size="12" fill="#000" font-weight="bold">お</text>
+      <text transform="translate(60.5, 0)" font-size="12" fill="#000" font-weight="bold">り</text>
+      <text transform="translate(72.6, 0)" font-size="12" fill="#000" font-weight="bold">ご</text>
+      <text transform="translate(84.7, 0)" font-size="12" fill="#000" font-weight="bold">請</text>
+      <text transform="translate(96.8, 0)" font-size="12" fill="#000" font-weight="bold">求</text>
+      <text transform="translate(108.9, 0)" font-size="12" fill="#000" font-weight="bold">申</text>
+      <text transform="translate(121, 0)" font-size="12" fill="#000" font-weight="bold">し</text>
+      <text transform="translate(133.1, 0)" font-size="12" fill="#000" font-weight="bold">上</text>
+      <text transform="translate(145.2, 0)" font-size="12" fill="#000" font-weight="bold">げ</text>
+      <text transform="translate(157.3, 0)" font-size="12" fill="#000" font-weight="bold">ま</text>
+      <text transform="translate(169.4, 0)" font-size="12" fill="#000" font-weight="bold">す</text>
+      <text transform="translate(181.5, 0)" font-size="12" fill="#000" font-weight="bold">。</text>
+    </g>
+  </g>
+  <g transform="translate(46, 262)">
+    <text transform="translate(0, 0)" font-size="16" fill="#000" font-weight="bold">税</text>
+    <text transform="translate(16, 0)" font-size="16" fill="#000" font-weight="bold">込</text>
+    <text transform="translate(32, 0)" font-size="16" fill="#000" font-weight="bold">み</text>
+    <text transform="translate(48, 0)" font-size="16" fill="#000" font-weight="bold">合</text>
+    <text transform="translate(64, 0)" font-size="16" fill="#000" font-weight="bold">計</text>
+    <text transform="translate(80, 0)" font-size="16" fill="#000" font-weight="bold">金</text>
+    <text transform="translate(96, 0)" font-size="16" fill="#000" font-weight="bold">額</text>
+  </g>
+  <g transform="translate(485, 262)">
+    <text transform="translate(0, 1)" font-size="11" fill="#000">(</text>
+    <text transform="translate(3, 0)" font-size="10" fill="#000">消</text>
+    <text transform="translate(13, 0)" font-size="10" fill="#000">費</text>
+    <text transform="translate(23.1, 0)" font-size="10" fill="#000">税</text>
+    <text transform="translate(33, 0)" font-size="10" fill="#000">込</text>
+    <text transform="translate(43, 0)" font-size="10" fill="#000">み</text>
+    <text transform="translate(52, 1)" font-size="11" fill="#000">)</text>
+  </g>
+  <g transform="translate(470, 264.5)">
+    <circle r="1"/>
+    <line transform="translate(3, -6)" x1="0" y1="0" x2="7" y2="0" stroke="black"/>
+  </g>
+  <rect x="38.2" y="239.475" width="518.04" height="31.5" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+  <rect x="36.22" y="237.435" width="522" height="35.52" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+  <g transform="translate(139 666)">
+    <text transform="translate(0, 0)" font-size="13">振</text>
+    <text transform="translate(12.5, 0)" font-size="13">込</text>
+    <text transform="translate(25, 0)" font-size="13">先</text>
+  </g>
+  <rect x="37" y="302.595" width="522" height="21.96" style="fill: #fff"/>
+  <rect x="37" y="323.475" width="522" height="22.02" style="fill: #eee"/>
+  <rect x="37" y="344.295" width="522" height="21.96" style="fill: #fff"/>
+  <rect x="37" y="365.175" width="522" height="22.02" style="fill: #eee"/>
+  <rect x="37" y="385.995" width="522" height="21.96" style="fill: #fff"/>
+  <rect x="37" y="406.875" width="522" height="22.02" style="fill: #eee"/>
+  <rect x="37" y="427.695" width="522" height="21.96" style="fill: #fff"/>
+  <rect x="37" y="448.575" width="522" height="22.02" style="fill: #eee"/>
+  <rect x="37" y="469.395" width="522" height="21.96" style="fill: #fff"/>
+  <rect x="37" y="490.275" width="522" height="22.02" style="fill: #eee"/>
+  <rect x="37" y="511.095" width="522" height="21.96" style="fill: #fff"/>
+  <rect x="37" y="531.975" width="522" height="22.02" style="fill: #eee"/>
+  <rect x="37" y="552.795" width="522" height="21.96" style="fill: #fff"/>
+  <rect x="37" y="573.675" width="522" height="22.02" style="fill: #eee"/>
+  <rect x="37" y="594.495" width="522" height="21.96" style="fill: #fff"/>
+  <rect x="36.7" y="280.575" width="522" height="22.02" style="fill: #eee"/>
+  <rect x="36.7" y="280.575" width="522" height="22.02" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+  <g transform="translate(45, 297)">
+    <text transform="translate(0, 0)" font-size="12" fill="#000">ご</text>
+    <text transform="translate(11, 0)" font-size="12" fill="#000">契</text>
+    <text transform="translate(22, 0)" font-size="12" fill="#000">約</text>
+    <text transform="translate(33, 0)" font-size="12" fill="#000">日</text>
+  </g>
+  <g transform="translate(210, 297)">
+    <text transform="translate(0, 0)" font-size="12" fill="#000">工</text>
+    <text transform="translate(11, 0)" font-size="12" fill="#000">事</text>
+    <text transform="translate(22, 0)" font-size="12" fill="#000">内</text>
+    <text transform="translate(33, 0)" font-size="12" fill="#000">訳</text>
+  </g>
+  <g transform="translate(374, 297)">
+    <text transform="translate(0, 0)" font-size="12" fill="#000">数</text>
+    <text transform="translate(11, 0)" font-size="12" fill="#000">量</text>
+  </g>
+  <g transform="translate(410, 297)">
+    <text transform="translate(0, 0)" font-size="12" fill="#000">単</text>
+    <text transform="translate(11, 0)" font-size="12" fill="#000">位</text>
+  </g>
+  <g transform="translate(449, 297)">
+    <text transform="translate(0, 0)" font-size="12" fill="#000">工</text>
+    <text transform="translate(11, 0)" font-size="12" fill="#000">事</text>
+    <text transform="translate(22, 0)" font-size="12" fill="#000">金</text>
+    <text transform="translate(33, 0)" font-size="12" fill="#000">額</text>
+  </g>
+  <g transform="translate(514, 297)">
+    <text transform="translate(0, 0)" font-size="12" fill="#000">消</text>
+    <text transform="translate(11, 0)" font-size="12" fill="#000">費</text>
+    <text transform="translate(22, 0)" font-size="12" fill="#000">税</text>
+  </g>
+  <polyline points="403.84 618.015 558.7 618.015 558.7 280.635" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+  <line x1="367.78" y1="618.015" x2="403.84" y2="618.015" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+  <polyline points="36.7 280.635 36.7 618.015 367.78 618.015" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+  <line x1="440.68" y1="618.015" x2="440.68" y2="280.635" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+  <line x1="403.84" y1="618.015" x2="403.84" y2="280.635" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+  <line x1="503.02" y1="618.015" x2="503.02" y2="280.635" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+  <line x1="367.78" y1="618.015" x2="367.78" y2="280.635" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+  <line x1="98.2" y1="618.015" x2="98.2" y2="280.635" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+  <rect x="36.7" y="617.775" width="522" height="22.02" style="fill: #fff"/>
+  <rect x="36.7" y="617.775" width="522" height="22.02" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+  <rect x="440.68" y="617.355" width="0.06" height="22.8" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+  <rect x="503.02" y="617.355" width="0.06" height="22.8" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+  <g id="変数" display="">
+    <text transform="translate(38.98 120.135)" style="font-size: 18px;fill: #222;">%%printBillLite1_1_%%</text>
+    <text transform="translate(38.98 167.235)" style="font-size: 13.979999542236328px;fill: #222;">%%printBillLite1_3_%%</text>
+    <text id="_date_-右寄" data-name="$date$-右寄" text-anchor="end" transform="translate(556.595 83.894)" style="font-size: 10.979999542236328px;">%%printBillLite1_2_%%</text>
+    <image id="_icon_" data-name="$icon$" width="717" height="132" transform="translate(346.24 91.935) scale(0.24)" xlink:href="%%printBillLite1_14_%%"/>
+    <text transform="translate(348.46 143.655)" style="font-size: 18px;fill: #222;">%%printBillLite1_7_%%</text>
+    <text transform="translate(349.12 158.115)" style="font-size: 10.020000457763672px;">%%printBillLite1_8_%%</text>
+    <text transform="translate(358.567 172.335)" style="font-size: 10.020000457763672px;;letter-spacing: 0.0020466877807485714em">%%printBillLite1_9_%%</text>
+    <text transform="translate(349.12 184.875)" style="font-size: 10.020000457763672px;">%%printBillLite1_10_%%</text>
+    <text transform="translate(375.249 197.415)" style="font-size: 10.020000457763672px;;letter-spacing: -0.0019492264578557825em">%%printBillLite1_11_%%</text>
+    <text transform="translate(375.249 209.916)" style="font-size: 10.020000457763672px;;letter-spacing: -0.0019492264578557825em">%%printBillLite1_12_%%</text>
+    <text transform="translate(447.4 222.495)" style="font-size: 10.020000457763672px;;letter-spacing: 0.0009746132289278912em">%%printBillLite1_13_%%</text>
+    <text id="_totalprice_-右寄" data-name="$totalprice$-右寄" text-anchor="end" transform="translate(465.099 264.405)" style="font-size: 18px;fill: #222;font-family: HGMaruGothicMPRO">￥%%printBillLite1_4_%%</text>
+    <g class="repeat_j" style="display: none;">
+      <text transform="translate(43.552 316.678)" style="font-size: 10.020000457763672px;">%%printBillLite1_36_%{i}_%%</text>
+      <text transform="translate(101.691 316.678)" style="font-size: 10.020000457763672px;">%%printBillLite1_37_%{i}_%%</text>
+      <text id="_m1-3_-中央" data-name="$m1-3$-中央" text-anchor="middle" transform="translate(385.116 316.678)" style="font-size: 10.020000457763672px;">%%printBillLite1_38_%{i}_%%</text>
+      <text id="_m1-4_-中央" data-name="$m1-4$-中央" text-anchor="middle" transform="translate(422.563 316.678)" style="font-size: 10.020000457763672px;">%%printBillLite1_39_%{i}_%%</text>
+      <text id="_m1-5_-右寄" data-name="$m1-5$-右寄" text-anchor="end" transform="translate(498.65 316.678)" style="font-size: 10.020000457763672px;">%%printBillLite1_40_%{i}_%%</text>
+      <text id="_m1-6_-右寄" data-name="$m1-6$-右寄" text-anchor="end" transform="translate(553.4 316.678)" style="font-size: 10.020000457763672px;">%%printBillLite1_41_%{i}_%%</text>
+    </g>
+    <text id="_price_-右寄" data-name="$price$-右寄" text-anchor="end" transform="translate(499.27 632.415)" style="font-size: 10.020000457763672px;fill: #222;">%%printBillLite1_5_%%</text>
+    <text id="_tax_-右寄" data-name="$tax$-右寄" text-anchor="end" transform="translate(554.334 632.415)" style="font-size: 10.020000457763672px;fill: #222;">%%printBillLite1_6_%%</text>
+    <g id="bank1" class="repeat_i" style="display: none;">
+      <text transform="translate(42.969 680.943)" style="font-size: 9px;fill: #222;">%%printBillLite1_15_%{i}_%%</text>
+      <text transform="translate(107.253 680.943)" style="font-size: 9px;fill: #222;">%%printBillLite1_16_%{i}_%%</text>
+      <text transform="translate(175.226 680.944)" style="font-size: 9px;fill: #222;">%%printBillLite1_17_%{i}_%%</text>
+      <text transform="translate(219.565 680.944)" style="font-size: 9px;fill: #222;">%%printBillLite1_18_%{i}_%%</text>
+    </g>
+    <text id="_page_-中央" data-name="$page$-中央" text-anchor="middle" transform="translate(292.913 794.835)" style="font-size: 10.020000457763672px;fill: #222;">%%printBillLite1_35_%%</text>
+  </g>
+</svg>

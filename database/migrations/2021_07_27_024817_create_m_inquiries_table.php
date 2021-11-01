@@ -15,8 +15,13 @@ class CreateMInquiriesTable extends Migration
     {
         Schema::create('m_inquiries', function (Blueprint $table) {
             $table->increments('id')->comment('問合せマスタID');
-            $table->string('name', 30)->nullable()->comment('名称');
+            $table->integer('company_id')->comment('会社ID');
+            $table->integer('internal_id')->comment('内部ID');
+            $table->string('name', 255)->nullable()->comment('名称');
             $table->tinyInteger('is_valid')->default(1)->nullable()->comment('有効フラグ');
+            $table->integer('order')->default(999)->comment('表示順');
+            $table->unique(['company_id', 'internal_id']);
+
         });
     }
 

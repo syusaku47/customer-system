@@ -1,0 +1,261 @@
+<svg id="見積_社内_工事明細" xmlns="http://www.w3.org/2000/svg" width="842" height="595.22" viewBox="0 0 842 595.22">
+  <style>text{font-family: IPA Mincho, IPAMincho, MS-PMincho, MS PMincho, IPA Gothic, IPAGothic;}</style>
+  <rect x="16" y="15.61" width="810" height="564" style="fill: #fff"/>
+  <g transform="translate(349, 79)">
+    <text transform="translate(0, 0)" font-size="31" fill="#000" font-weight="bold">工</text>
+    <text transform="translate(28, 0)" font-size="31" fill="#000" font-weight="bold">事</text>
+    <text transform="translate(56, 0)" font-size="31" fill="#000" font-weight="bold">明</text>
+    <text transform="translate(84, 0)" font-size="31" fill="#000" font-weight="bold">細</text>
+    <text transform="translate(112, 0)" font-size="31" fill="#000" font-weight="bold">書</text>
+  </g>
+  <!-- ヘッダー-->
+  <g>
+    <polygon points="582.28 115.57 493.24 115.57 433.48 115.57 381.46 115.57 69.52 115.57 38.08 115.57 38.08 137.53 493.24 137.53 804.04 137.53 804.04 115.57 582.28 115.57" style="fill: #eee"/>
+    <g transform="translate(200, 132)">
+      <text transform="translate(0, 0)" font-size="13" fill="#000" font-weight="bold">工</text>
+      <text transform="translate(12.3, 0)" font-size="13" fill="#000" font-weight="bold">事</text>
+      <text transform="translate(24.6, 0)" font-size="13" fill="#000" font-weight="bold">名</text>
+      <text transform="translate(36.9, 0)" font-size="13" fill="#000" font-weight="bold">称</text>
+    </g>
+    <g transform="translate(394, 132)">
+      <text transform="translate(0, 0)" font-size="13" fill="#000" font-weight="bold">数</text>
+      <text transform="translate(13, 0)" font-size="13" fill="#000" font-weight="bold">量</text>
+    </g>
+    <g transform="translate(450, 132)">
+      <text transform="translate(0, 0)" font-size="13" fill="#000" font-weight="bold">単</text>
+      <text transform="translate(13, 0)" font-size="13" fill="#000" font-weight="bold">位</text>
+    </g>
+    <g transform="translate(524, 132)">
+      <text transform="translate(0, 0)" font-size="13" fill="#000" font-weight="bold">金</text>
+      <text transform="translate(13, 0)" font-size="13" fill="#000" font-weight="bold">額</text>
+    </g>
+    <g transform="translate(748, 132)">
+      <text transform="translate(0, 0)" font-size="13" fill="#000" font-weight="bold">備</text>
+      <text transform="translate(12, 0)" font-size="13" fill="#000" font-weight="bold">考</text>
+    </g>
+    <g transform="translate(601, 132)">
+      <text transform="translate(0, 0)" font-size="13" fill="#000" font-weight="bold">原</text>
+      <text transform="translate(12, 0)" font-size="13" fill="#000" font-weight="bold">価</text>
+      <text transform="translate(24, 0)" font-size="13" fill="#000" font-weight="bold">金</text>
+      <text transform="translate(36, 0)" font-size="13" fill="#000" font-weight="bold">額</text>
+    </g>
+    <g transform="translate(675.5, 132)">
+      <text transform="translate(0, 0)" font-size="13" fill="#000" font-weight="bold">粗</text>
+      <text transform="translate(12, 0)" font-size="13" fill="#000" font-weight="bold">利</text>
+      <text transform="translate(24, 0)" font-size="13" fill="#000" font-weight="bold">率</text>
+    </g>
+    <line x1="582.28" y1="115.57" x2="582.28" y2="137.53" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+    <line x1="493.24" y1="115.57" x2="493.24" y2="137.53" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+    <line x1="433.48" y1="115.57" x2="433.48" y2="137.53" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+    <line x1="381.46" y1="115.57" x2="381.46" y2="137.53" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+    <line x1="69.52" y1="115.57" x2="69.52" y2="137.53" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+    <line x1="718.239" y1="137.53" x2="718.239" y2="115.57" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+    <line x1="670.239" y1="115.57" x2="670.239" y2="137.53" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+    <rect x="38.08" y="115.57" width="765.96" height="21.96" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+  </g>
+
+  <!-- ===== template_1 ===== -->
+  <g class="template_1" style="display:none;">
+    <!-- template_1 -->
+    <!-- 大項目 -->
+    <!-- level : i -->
+    <g class="hide_i">
+      <polygon points="582.28 137.53 493.24 137.53 433.48 137.53 381.46 137.53 69.52 137.53 38.08 137.53 38.08 159.49 493.24 159.49 804.04 159.49 804.04 137.53 582.28 137.53" style="fill: #fff"/>
+      <line x1="582.28" y1="137.53" x2="582.28" y2="159.49" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <line x1="493.24" y1="137.53" x2="493.24" y2="159.49" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <line x1="433.48" y1="137.53" x2="433.48" y2="159.49" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <line x1="381.46" y1="137.53" x2="381.46" y2="159.49" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <line x1="69.52" y1="137.53" x2="69.52" y2="159.49" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <line x1="718.239" y1="159.49" x2="718.239" y2="137.53" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <line x1="670.239" y1="137.53" x2="670.239" y2="159.49" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <line x1="804.1" y1="137.59" x2="804.1" y2="159.61" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <line x1="38.08" y1="159.61" x2="38.08" y2="137.59" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <path d="M804.1,159.61H38.08" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <path d="M804.1,137.59H38.08" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <text id="_line1-1_-中央" data-name="$line1-1$-中央" text-anchor="middle" transform="translate(54.362 152.281)" style="font-size: 10px;">%%printKouji1_1_%{i}_%%</text>
+      <text transform="translate(76.22 152.281)" style="font-size: 10px;">%%printKouji1_2_%{i}_%%</text>
+      <text id="_line1-3_-中央" data-name="$line1-3$-中央" text-anchor="middle" transform="translate(406.721 152.281)" style="font-size: 10px;">%%printKouji1_3_%{i}_%%</text>
+      <text id="_line1-4_-中央" data-name="$line1-4$-中央" text-anchor="middle" transform="translate(463.621 152.281)" style="font-size: 10px;">%%printKouji1_4_%{i}_%%</text>
+      <text id="_line1-5_右寄" data-name="$line1-5$－右寄" text-anchor="end" transform="translate(576.842 152.281)" style="font-size: 10px;">%%printKouji1_5_%{i}_%%</text>
+      <text id="_line1-6_右寄" data-name="$line1-6$－右寄" text-anchor="end" transform="translate(664.729 152.281)" style="font-size: 10px;">%%printKouji1_6_%{i}_%%</text>
+      <text id="_line1-7_右寄" data-name="$line1-7$－右寄" text-anchor="end" transform="translate(712.75 152.281)" style="font-size: 10px;">%%printKouji1_7_%{i}_%%</text>
+      <text id="_line1-8_" data-name="$line1-8$" transform="translate(722.92 152.281)" style="font-size: 10px;">%%printKouji1_8_%{i}_%%</text>
+    </g>
+    <!-- level : i -->
+  </g>
+
+  <!-- ===== template_2 ===== -->
+  <g class="template_2" style="display:none;">
+    <!-- template_2 -->
+    <!-- 予備費関係末の合計 -->
+    <g transform="translate(0 -23)">
+      <polygon points="582.28 159.73 493.24 159.73 433.48 159.73 381.46 159.73 69.52 159.73 38.08 159.73 38.08 181.69 493.24 181.69 804.04 181.69 804.04 159.73 582.28 159.73" style="fill: #fff"/>
+      <line x1="582.28" y1="159.73" x2="582.28" y2="181.69" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <line x1="493.24" y1="159.73" x2="493.24" y2="181.69" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <line x1="433.48" y1="159.73" x2="433.48" y2="181.69" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <line x1="381.46" y1="159.73" x2="381.46" y2="181.69" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <line x1="718.239" y1="181.69" x2="718.239" y2="159.73" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <line x1="670.239" y1="159.73" x2="670.239" y2="181.69" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <line x1="804.1" y1="159.79" x2="804.1" y2="181.81" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <line x1="38.08" y1="181.81" x2="38.08" y2="159.79" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <path d="M804.1,181.81H38.08" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <path d="M804.1,159.79H38.08" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <g transform="translate(235, 175.5)">
+        <text transform="translate(0, 0)" font-size="12" fill="#9a9a9a" font-weight="bold">予</text>
+        <text transform="translate(12, 0)" font-size="12" fill="#9a9a9a" font-weight="bold">備</text>
+        <text transform="translate(24, 0)" font-size="12" fill="#9a9a9a" font-weight="bold">費</text>
+        <text transform="translate(36, 0)" font-size="12" fill="#9a9a9a" font-weight="bold">関</text>
+        <text transform="translate(48, 0)" font-size="12" fill="#9a9a9a" font-weight="bold">係</text>
+        <text transform="translate(60, 0)" font-size="12" fill="#9a9a9a" font-weight="bold">末</text>
+        <text transform="translate(72, 0)" font-size="12" fill="#9a9a9a" font-weight="bold">の</text>
+        <text transform="translate(84, 0)" font-size="12" fill="#9a9a9a" font-weight="bold">合</text>
+        <text transform="translate(96, 0)" font-size="12" fill="#9a9a9a" font-weight="bold">計</text>
+      </g>
+      <text id="_reserveFund-1_右寄" data-name="$reserveFund-1$－右寄" text-anchor="end" transform="translate(576.842 174.481)" style="fill: #9a9a9a;font-size: 10px;">%%printKouji1_9_%%</text>
+      <text id="_reserveFund-2_右寄" data-name="$reserveFund-2$－右寄" text-anchor="end" transform="translate(664.729 174.481)" style="fill: #9a9a9a;font-size: 10px;">%%printKouji1_10_%%</text>
+      <!-- <text id="_reserveFund-3_右寄" data-name="$reserveFund-3$－右寄" text-anchor="end" transform="translate(712.75 174.481)" style="font-size: 10px;">$reserveFund-3$</text>
+      <text id="_reserveFund-4_" data-name="$reserveFund-4$" transform="translate(722.92 174.481)" style="font-size: 10px;">$reserveFund-4$</text> -->
+    </g>
+  </g>
+
+  <!-- ===== template_3 ===== -->
+  <g class="template_3" style="display:none;">
+    <!-- template_3 -->
+    <!-- 予備原価 -->
+    <g transform="translate(0 -45)">
+      <polygon points="582.28 181.69 493.24 181.69 433.48 181.69 381.46 181.69 69.52 181.69 38.08 181.69 38.08 203.65 493.24 203.65 804.04 203.65 804.04 181.69 582.28 181.69" style="fill: #ccc"/>
+      <line x1="582.28" y1="181.69" x2="582.28" y2="203.65" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <line x1="493.24" y1="181.69" x2="493.24" y2="203.65" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <line x1="433.48" y1="181.69" x2="433.48" y2="203.65" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <line x1="381.46" y1="181.69" x2="381.46" y2="203.65" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <line x1="718.239" y1="203.65" x2="718.239" y2="181.69" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <line x1="670.239" y1="181.69" x2="670.239" y2="203.65" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <line x1="804.1" y1="181.75" x2="804.1" y2="203.77" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <line x1="38.08" y1="203.77" x2="38.08" y2="181.75" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <path d="M804.1,203.77H38.08" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <path d="M804.1,181.75H38.08" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <g transform="translate(295, 198)">
+        <text transform="translate(0, 0)" font-size="13" fill="#000" font-weight="bold">予</text>
+        <text transform="translate(12, 0)" font-size="13" fill="#000" font-weight="bold">備</text>
+        <text transform="translate(24, 0)" font-size="13" fill="#000" font-weight="bold">原</text>
+        <text transform="translate(36, 0)" font-size="13" fill="#000" font-weight="bold">価</text>
+      </g>
+      <text id="_reserveCost-1_右寄" data-name="$reserveCost-1$－右寄" text-anchor="end" transform="translate(576.842 196.441)" style="font-size: 10px;">%%printKouji1_11_%%</text>
+      <text id="_reserveCost-2_右寄" data-name="$reserveCost-2$－右寄" text-anchor="end" transform="translate(664.729 196.441)" style="font-size: 10px;">%%printKouji1_12_%%</text>
+      <!-- <text id="_reserveCost-3_右寄" data-name="$reserveCost-3$－右寄" text-anchor="end" transform="translate(712.75 196.441)" style="font-size: 10px;">%%printKouji1_13_%%</text>
+      <text id="_reserveCost-4_" data-name="$reserveCost-4$" transform="translate(722.92 196.441)" style="font-size: 10px;">%%printKouji1_14_%%</text> -->
+    </g>
+  </g>
+
+  <!-- ===== template_4 ===== -->
+  <g class="template_4" style="display:none;">
+    <!-- template_4 -->
+    <!-- 合計 -->
+    <g transform="translate(0 -67)">
+      <polygon points="582.28 203.83 493.24 203.83 433.48 203.83 381.46 203.83 69.52 203.83 38.08 203.83 38.08 225.79 493.24 225.79 804.04 225.79 804.04 203.83 582.28 203.83" style="fill: #eee"/>
+      <line x1="582.28" y1="203.83" x2="582.28" y2="225.79" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <line x1="493.24" y1="203.83" x2="493.24" y2="225.79" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <line x1="433.48" y1="203.83" x2="433.48" y2="225.79" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <line x1="381.46" y1="203.83" x2="381.46" y2="225.79" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <line x1="718.239" y1="225.79" x2="718.239" y2="203.83" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <line x1="670.239" y1="203.83" x2="670.239" y2="225.79" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <line x1="804.1" y1="203.89" x2="804.1" y2="225.91" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <line x1="38.08" y1="225.91" x2="38.08" y2="203.89" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <path d="M804.1,225.91H38.08" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <path d="M804.1,203.89H38.08" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <path d="M38.08,203.59H804.1" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <g transform="translate(321, 220)">
+        <text transform="translate(0, 0)" font-size="13" fill="#000" font-weight="bold">合</text>
+        <text transform="translate(12, 0)" font-size="13" fill="#000" font-weight="bold">計</text>
+      </g>
+      <text id="_total-1_右寄" data-name="$total-1$－右寄" text-anchor="end" transform="translate(576.842 218.581)" style="font-size: 10px;">%%printKouji1_13_%%</text>
+      <text id="_total-2_右寄" data-name="$total-2$－右寄" text-anchor="end" transform="translate(664.729 218.581)" style="font-size: 10px;">%%printKouji1_14_%%</text>
+      <!-- <text id="_total-3_右寄" data-name="$total-3$－右寄" text-anchor="end" transform="translate(712.75 218.581)" style="font-size: 10px;">$total-3$</text>
+      <text id="_total-4_" data-name="$total-4$" transform="translate(722.92 218.581)" style="font-size: 10px;">$total-4$</text> -->
+    </g>
+  </g>
+  <!-- ===== template_5 ===== -->
+  <g class="template_5" style="display:none;">
+    <!-- template_5 -->
+    <!-- 調整金額 -->
+    <g transform="translate(0 -89)">
+      <polygon points="582.28 225.91 493.24 225.91 433.48 225.91 381.46 225.91 69.52 225.91 38.08 225.91 38.08 247.87 493.24 247.87 804.04 247.87 804.04 225.91 582.28 225.91" style="fill: #eee"/>
+      <line x1="582.28" y1="225.91" x2="582.28" y2="247.87" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <line x1="493.24" y1="225.91" x2="493.24" y2="247.87" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <line x1="433.48" y1="225.91" x2="433.48" y2="247.87" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <line x1="381.46" y1="225.91" x2="381.46" y2="247.87" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <line x1="718.239" y1="247.87" x2="718.239" y2="225.91" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <line x1="670.239" y1="225.91" x2="670.239" y2="247.87" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <line x1="804.1" y1="225.97" x2="804.1" y2="247.99" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <line x1="38.08" y1="247.99" x2="38.08" y2="225.97" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <path d="M804.1,247.99H38.08" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <path d="M804.1,225.97H38.08" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <g transform="translate(297, 242)">
+        <text transform="translate(0, 0)" font-size="12" fill="#000" font-weight="bold">調</text>
+        <text transform="translate(12.3, 0)" font-size="12" fill="#000" font-weight="bold">整</text>
+        <text transform="translate(24.6, 0)" font-size="12" fill="#000" font-weight="bold">金</text>
+        <text transform="translate(36.9, 0)" font-size="12" fill="#000" font-weight="bold">額</text>
+      </g>
+      <text id="_adjustment-1_右寄" data-name="$adjustment-1$－右寄" text-anchor="end" transform="translate(576.842 240.661)" style="font-size: 10px;">%%printKouji1_15_%%</text>
+      <text id="_adjustment-2_右寄" data-name="$adjustment-2$－右寄" text-anchor="end" transform="translate(664.729 240.661)" style="font-size: 10px;">%%printKouji1_16_%%</text>
+      <!-- <text id="_adjustment-3_右寄" data-name="$adjustment-3$－右寄" text-anchor="end" transform="translate(712.75 240.661)" style="font-size: 10px;">$adjustment-3$</text>
+      <text id="_adjustment-4_" data-name="$adjustment-4$" transform="translate(722.92 240.661)" style="font-size: 10px;">$adjustment-4$</text> -->
+    </g>
+  </g>
+  <!-- ===== template_6 ===== -->
+  <g class="template_6" style="display:none;">
+    <!-- template_6 -->
+    <!-- 見積金額 -->
+    <g transform="translate(0 -110)">
+      <polygon points="582.28 247.04 493.24 247.04 433.48 247.04 381.46 247.04 69.52 247.04 38.08 247.04 38.08 269 493.24 269 804.04 269 804.04 247.04 582.28 247.04" style="fill: #ccc"/>
+      <line x1="582.28" y1="247.04" x2="582.28" y2="269" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <line x1="493.24" y1="247.04" x2="493.24" y2="269" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <line x1="433.48" y1="247.04" x2="433.48" y2="269" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <line x1="381.46" y1="247.04" x2="381.46" y2="269" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <line x1="718.239" y1="269" x2="718.239" y2="247.04" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <line x1="670.239" y1="247.04" x2="670.239" y2="269" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <line x1="804.1" y1="247.1" x2="804.1" y2="269.12" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <line x1="38.08" y1="269.12" x2="38.08" y2="247.1" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <path d="M804.1,269.12H38.08" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <path d="M804.1,247.1H38.08" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <g transform="translate(297, 264)">
+        <text transform="translate(0, 0)" font-size="12" fill="#000" font-weight="bold">見</text>
+        <text transform="translate(12.3, 0)" font-size="12" fill="#000" font-weight="bold">積</text>
+        <text transform="translate(24.6, 0)" font-size="12" fill="#000" font-weight="bold">金</text>
+        <text transform="translate(36.9, 0)" font-size="12" fill="#000" font-weight="bold">額</text>
+      </g>
+      <text id="_estimates-1_右寄" data-name="$estimates-1$－右寄" text-anchor="end" transform="translate(576.842 261.791)" style="font-size: 10px;">%%printKouji1_17_%%</text>
+      <text id="_estimates-2_右寄" data-name="$estimates-2$－右寄" text-anchor="end" transform="translate(664.729 261.791)" style="font-size: 10px;">%%printKouji1_18_%%</text>
+      <!-- <text id="_estimates-3_右寄" data-name="$estimates-3$－右寄" text-anchor="end" transform="translate(712.75 261.791)" style="font-size: 10px;">$estimates-3$</text>
+      <text id="_estimates-4_" data-name="$estimates-4$" transform="translate(722.92 261.791)" style="font-size: 10px;">$estimates-4$</text> -->
+    </g>
+  </g>
+  <!-- ===== template_7 ===== -->
+  <g class="template_7" style="display:none;">
+    <!-- template_7 -->
+    <!-- 粗利率 -->
+    <g transform="translate(0 -132)">
+      <polygon points="582.28 269 493.24 269 433.48 269 381.46 269 69.52 269 38.08 269 38.08 290.96 493.24 290.96 804.04 290.96 804.04 269 582.28 269" style="fill: #ccc"/>
+      <line x1="582.28" y1="269" x2="582.28" y2="290.96" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <line x1="493.24" y1="269" x2="493.24" y2="290.96" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <line x1="433.48" y1="269" x2="433.48" y2="290.96" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <line x1="381.46" y1="269" x2="381.46" y2="290.96" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <line x1="718.239" y1="290.96" x2="718.239" y2="269" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <line x1="670.239" y1="269" x2="670.239" y2="290.96" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <line x1="804.1" y1="269.06" x2="804.1" y2="291.08" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <line x1="38.08" y1="291.08" x2="38.08" y2="269.06" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <path d="M804.1,291.08H38.08" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <path d="M804.1,269.06H38.08" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <path d="M38.08,291.08H804.1" style="fill: none;stroke: #000;stroke-linecap: round;stroke-linejoin: round;stroke-width: 1px"/>
+      <g transform="translate(309, 286)">
+        <text transform="translate(0, 0)" font-size="12" fill="#000" font-weight="bold">粗</text>
+        <text transform="translate(12, 0)" font-size="12" fill="#000" font-weight="bold">利</text>
+        <text transform="translate(24, 0)" font-size="12" fill="#000" font-weight="bold">率</text>
+      </g>
+      <text id="_interestRate-1_右寄" data-name="$interestRate-1$－右寄" text-anchor="end" transform="translate(576.842 283.751)" style="font-size: 10px;">%%printKouji1_19_%%</text>
+      <!-- <text id="_interestRate-2_右寄" data-name="$interestRate-2$－右寄" text-anchor="end" transform="translate(664.729 283.751)" style="font-size: 10px;">$interestRate-2$</text>
+      <text id="_interestRate-3_右寄" data-name="$interestRate-3$－右寄" text-anchor="end" transform="translate(712.75 283.751)" style="font-size: 10px;">$interestRate-3$</text>
+      <text id="_interestRate-4_" data-name="$interestRate-4$" transform="translate(722.92 283.751)" style="font-size: 10px;">$interestRate-4$</text> -->
+    </g>
+  </g>
+</svg>

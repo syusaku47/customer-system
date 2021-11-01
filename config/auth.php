@@ -14,7 +14,7 @@ return [
     */
 
     'defaults' => [
-        'guard' => 'web',
+        'guard' => 'api',
         'passwords' => 'm_employees',
     ],
 
@@ -42,7 +42,8 @@ return [
         ],
 
         'api' => [
-            'driver' => 'token',
+            'driver' => 'session',
+//            'driver' => 'token',
             'provider' => 'm_employees',
             'hash' => false,
         ],

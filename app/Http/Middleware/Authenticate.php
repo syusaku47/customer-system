@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use Illuminate\Auth\Middleware\Authenticate as Middleware;
+use Illuminate\Http\Exceptions\HttpResponseException;
 
 class Authenticate extends Middleware
 {
@@ -14,9 +15,32 @@ class Authenticate extends Middleware
      */
     protected function redirectTo($request)
     {
-//        dd("aaaaa");
-        if (! $request->expectsJson()) {
-            return route('unauthenticated', ['path' => $request->path()]);
-        }
+        // header部
+        $header = [
+            'request' => $request->path(),
+            'status'  => 'FAILED',
+            'status_code' => 401,
+            'messages' => ['認証に失敗しました'],
+        ];
+        // body部
+        $result = [
+            'header'   => $header,
+            'body'     => [],
+        ];
+
+        $res = response()->json(
+            $header,
+            422,
+            [
+                'Content-Type' => 'application/json;charset=UTF-8', 'Charset' => 'utf-8'
+            ],
+            JSON_UNESCAPED_UNICODE
+        );
+        throw new HttpResponseException($res);
+        return $request->expectsJson();
+
+//        if (! $request->expectsJson()) {
+//            return route('unauthenticated', ['path' => $request->path()]);
+//        }
     }
 }

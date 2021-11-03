@@ -1792,7 +1792,7 @@ class TCustomer extends ModelBase
                 'c.lng',
                 'p.completion_date as saisyu_kankou_dt',
 //                'p.jyutyu_kin_all',
-                DB::raw('SUM(p2.jyutyu_kin_all) as koji_kin'),
+//                DB::raw('SUM(p2.jyutyu_kin_all) as koji_kin'),
 //                'e.name as employee_name',
 //                'k.name as koji_name',
 //                'l.name as last_name',
@@ -1802,32 +1802,10 @@ class TCustomer extends ModelBase
                     ->whereNull('p.failure_date')//失注日
                 ->where('completion_date', '>=',DB::raw('ALL(SELECT max(completion_date) FROM t_projects WHERE customer_id = p.customer_id)') );
 })
-//            ->leftJoin("({ $sub_query }) as p2", 'c.id', '=','p2.customer_id')
-            ->leftJoin('t_projects as p2', function ($q) {
-                $q->on('c.id', '=', 'p2.customer_id')
-//                    ->select(DB::raw('SUM(p2.jyutyu_kin_all) as koji_kin'))
-                    ->whereNull('p2.failure_date')//失注日
-                    ->whereNotNull('p2.contract_date')//契約日
-                    ->whereNotNull('p2.completion_date')//完工日
-//                    ->groupBy('p2.customer_id')
-                ;
-            })
-            ->groupBy('p2.customer_id', 'c.id','p.completion_date')
-
-//            ->leftJoin('m_employees as e', 'c.sales_contact', 'e.employee_cd')
-//            ->leftJoin('m_customer_rank_kojis as k', 'c.rank_koji', 'k.id')
-//            ->leftJoin('m_customer_rank_last_completions as l', 'c.rank_last', 'l.id')
+            ->leftJoin("({ $sub_query }) as p2", 'c.id', '=','p2.customer_id')
             ->where('c.company_id', $company_id)
             ->skip($offset)
             ->take($perPage);
-
-        $query2 = TCustomer::select(DB::raw('SUM(p2.jyutyu_kin_all) as koji_kin'), 'p2.customer_id')
-            ->leftjoin('t_projects as p2', function ($q) {
-                $q->on('c.id', '=', 'p2.customer_id')
-                    ->whereNull('p2.failure_date')//失注日
-                    ->whereNotNull('p2.contract_date')//契約日
-                    ->whereNotNull('p2.completion_date');//完工日
-            })->groupBy('p2.customer_id');
 
         dd($query->get());
 //        dd($query->toSql());

@@ -6,7 +6,7 @@ services:
     build: ./web
     image: ship-web-image
     hostname: web-server
-    container_name: web-container
+    container_name: web-customer
     command: --default-authentication-plugin=mysql_native_password
     environment:
       TZ: Asia/Tokyo
@@ -25,7 +25,7 @@ services:
     build: ./db
     image: ship-db-image
     hostname: db-server
-    container_name: db-container
+    container_name: db-customer
     ports:
       - "3306:3306"
     restart: always
@@ -43,7 +43,7 @@ services:
     build: ./phpMyAdmin
     image: phpmyadmin/phpmyadmin
     hostname: pma-server
-    container_name: phpmyadmin-container
+    container_name: phpmyadmin-customer
     ports:
       - 8080:80
     restart: always
